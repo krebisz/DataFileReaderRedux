@@ -86,7 +86,7 @@ namespace DataFileReader.Helper
 
                         if (!String.IsNullOrEmpty(metaData.Name))
                         {
-                            tableName = metaData.Name;wr
+                            tableName = metaData.Name;
                         }
                         else
                         {

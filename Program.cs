@@ -9,6 +9,7 @@
     using DataFileReader.Class;
     using DataFileReader.Helper;
     using System.Text.Json;
+    using Newtonsoft.Json.Linq;
 
     class Program
     {
@@ -94,6 +95,15 @@
             fileData = fileData.Trim().Replace("\t", "");
 
             dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
+
+            JArray objectArray = JArray.Parse(dynamicObject.ToString());
+            //FormatJSON(dynamicObject.ToString(), 0);
+            //var objectDictionary = ConvertToDictionary(dynamicObject);
+
+            List<string> list = new List<string>();
+
+            list = DataHelper.GetFieldList(objectArray);
+
         }
 
         public static void ProceessFile_TCX(string fileName, string fileData)
@@ -137,28 +147,37 @@
 
 
 
+
+
         static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
         {
             var dictionary = new Dictionary<string, object>();
 
-            // Convert dynamic to JsonElement (if using System.Text.Json)
+            System.Text.Json.JsonDocument jsonDocument;
+            jsonDocument = (JsonDocument)dynamicObject;
+
+            //Convert dynamic to JsonElement (if using System.Text.Json)
             JsonElement jsonElement = (JsonElement)dynamicObject;
 
             foreach (var property in jsonElement.EnumerateObject())
             {
+#pragma warning disable CS8601 // Possible null reference assignment.
                 dictionary[property.Name] = property.Value.ValueKind switch
                 {
                     JsonValueKind.String => property.Value.GetString(),
-                    JsonValueKind.Number => property.Value.GetDecimal(), // Use GetInt32, GetDouble, etc., if specific type expected
+                    JsonValueKind.Number => property.Value.GetDecimal(), //Use GetInt32, GetDouble, etc., if specific type expected
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
-                    JsonValueKind.Object => property.Value.ToString(), // For nested objects
-                    JsonValueKind.Array => property.Value.ToString(), // For arrays
-                    _ => null // Handle nulls and undefined types
+                    JsonValueKind.Object => property.Value.ToString(), //For nested objects
+                    JsonValueKind.Array => property.Value.ToString(), //For arrays
+                    _ => null //Handle nulls and undefined types
                 };
+#pragma warning restore CS8601 // Possible null reference assignment.
             }
 
             return dictionary;
         }
+
+
     }
 }

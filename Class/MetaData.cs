@@ -28,7 +28,6 @@
             Name = name;
             Fields = new Dictionary<string, Type>();
 
-
             string[] fieldNames = headerLine.Split(',');
 
             foreach (string fieldName in fieldNames)

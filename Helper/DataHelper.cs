@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -9,6 +12,8 @@ namespace DataFileReader.Helper
 {
     public static class DataHelper
     {
+        public static List<string> fieldlist = new List<string>();
+
         public static string GetFileExtension(string file)
         {
             string fileExtension = string.Empty;
@@ -109,9 +114,9 @@ namespace DataFileReader.Helper
             return dataSetName;
         }
 
-        public static bool HasSpecialChars(string yourString)
+        public static bool HasSpecialChars(string dataString)
         {
-            return yourString.Any(character => !char.IsLetterOrDigit(character));
+            return dataString.Any(character => !char.IsLetterOrDigit(character));
         }
 
         public static bool IsSpecialCharacter(char character)
@@ -129,9 +134,9 @@ namespace DataFileReader.Helper
 
             foreach (char character in name)
             {
-                if (!char.IsLetterOrDigit(character)) 
+                if (!char.IsLetterOrDigit(character))
                 {
-                    
+
                 }
                 else
                 {
@@ -140,6 +145,157 @@ namespace DataFileReader.Helper
             }
 
             return normalizedString;
+        }
+
+        //public static List<string> GetFieldList(JArray objectArray)
+        //{
+        //    List<string> fieldlist = new List<string>();
+
+        //    try
+        //    {
+        //        foreach (var obj in objectArray)
+        //        {
+
+
+        //            string objectString = obj.ToString();
+        //            string dynamicObject = objectString;
+
+        //            //dynamicObject = FormatJSON(objectString, 1);
+        //            dynamicObject = dynamicObject.Trim().Replace("\r", "");
+        //            dynamicObject = dynamicObject.Trim().Replace("\n", "");
+        //            dynamicObject = dynamicObject.Trim().Replace("\t", "");
+        //            dynamicObject = dynamicObject.Trim().Replace("\\", "");
+        //            //dynamicObject = dynamicObject.Trim().Replace(" ", "");
+
+        //            dynamicObject = JsonSerializer.Deserialize<dynamic>(dynamicObject);
+
+        //            JArray subObjectArray = JArray.Parse(dynamicObject);
+
+        //            if (subObjectArray != null && subObjectArray.Count > 0)
+        //            {
+        //                foreach (JObject channelObj in subObjectArray)
+        //                {
+        //                    if (channelObj["source"].ToString().ToLower().Trim() == "")
+        //                    {
+
+        //                    }
+        //                }
+        //            }
+
+        //            if (subObjectArray != null)
+        //            {
+        //                GetFieldList(subObjectArray);
+        //            }
+
+        //            fieldlist.Add(obj.ToString());
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw;
+        //    }
+
+        //    return fieldlist;
+        //}
+
+        public static List<string> GetFieldList(JArray objectArray)
+        {
+            //List<string> fieldlist = new List<string>();
+
+            try
+            {
+                foreach (var obj in objectArray)
+                {
+                    object dynamicObject = new object();
+
+                    string fileData = obj.ToString().Trim().Replace(" ", "");
+                    fileData = obj.ToString().Trim().Replace("\r", "");
+                    fileData = obj.ToString().Trim().Replace("\n", "");
+                    fileData = obj.ToString().Trim().Replace("\t", "");
+
+                    dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
+                    dynamicObject = "[" + dynamicObject + "]";
+
+                    JArray subObjectArray = JArray.Parse(dynamicObject.ToString());
+
+                    if (subObjectArray != null && subObjectArray.Count > 0)
+                    {
+                        foreach (JObject subObject in subObjectArray)
+                        {
+                            IJEnumerable<JToken> subObjectValue = subObject.Values();
+
+                            foreach (var subValue in subObjectValue)
+                            {
+                                fieldlist.Add(subValue.ToString());
+
+                                if (subValue != null && subValue.HasValues)
+                                {
+                                    JArray subArray = new JArray(subValue);
+
+                                    GetFieldList(subArray);
+                                }
+                            }
+
+                            //if (subObject["source"].ToString().ToLower().Trim() == "")
+                            //{
+
+                            //}
+                        }
+                    }
+
+                    //if (subObjectArray != null)
+                    //{
+                    //    GetFieldList(subObjectArray);
+                    //}
+
+                    //fieldlist.Add(obj.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+            return fieldlist;
+        }
+
+        public static string FormatJSON(string unformattedData, int padOrStrip)
+        {
+            try
+            {
+                switch (padOrStrip)
+                {
+                    case 0:
+                        {
+                            int start = unformattedData.IndexOf('[');
+                            int end = unformattedData.IndexOf("]");
+
+                            unformattedData = unformattedData.Substring(start, end - start);
+                            break;
+                        }
+                    case 1:
+                        {
+                            unformattedData = "[" + unformattedData + "]";
+                            break;
+                        }
+                    case 2:
+                        {
+                            unformattedData = "{" + unformattedData + "}";
+                            break;
+                        }
+                    default:
+                        {
+                            break;
+                        }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+
+            JArray returnedDataArray = JArray.Parse(unformattedData);
+            return returnedDataArray.ToString();
         }
     }
 }
