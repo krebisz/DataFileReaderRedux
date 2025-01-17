@@ -101,8 +101,10 @@
             //var objectDictionary = ConvertToDictionary(dynamicObject);
 
             List<string> list = new List<string>();
+            //list = DataHelper.GetFieldList(objectArray);
 
-            list = DataHelper.GetFieldList(objectArray);
+            List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
+            HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null);
 
         }
 
@@ -110,9 +112,6 @@
         {
 
         }
-
-
-
 
         public static void PrintUniqueFileExtensions()
         {
@@ -144,11 +143,6 @@
             }
         }
 
-
-
-
-
-
         static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
         {
             var dictionary = new Dictionary<string, object>();
@@ -177,7 +171,5 @@
 
             return dictionary;
         }
-
-
     }
 }

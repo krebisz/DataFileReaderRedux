@@ -1,18 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
+﻿using DataFileReader.Class;
+using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DataFileReader.Helper
 {
     public static class DataHelper
     {
         public static List<string> fieldlist = new List<string>();
+
+        public static List<HierarchyObject> ObjectHierarchylist = new List<HierarchyObject>();
 
         public static string GetFileExtension(string file)
         {
@@ -297,5 +294,76 @@ namespace DataFileReader.Helper
             JArray returnedDataArray = JArray.Parse(unformattedData);
             return returnedDataArray.ToString();
         }
+
+        public static List<HierarchyObject> GetObjectHierarchy(JArray objectArray, int? level)
+        {
+            level = level is null ? 0 : level.Value;
+
+            if (level == 0)
+            {
+                ObjectHierarchylist.Add(new HierarchyObject("Root", level));
+            }
+
+            level++;
+
+            try
+            {
+                foreach (var obj in objectArray)
+                {
+                    object dynamicObject = new object();
+
+                    string objectString = obj.ToString().Trim().Replace(" ", "");
+                    objectString = obj.ToString().Trim().Replace("\r", "");
+                    objectString = obj.ToString().Trim().Replace("\n", "");
+                    objectString = obj.ToString().Trim().Replace("\t", "");
+
+                    dynamicObject = JsonSerializer.Deserialize<dynamic>(objectString);
+                    dynamicObject = "[" + dynamicObject + "]";
+
+                    JArray subObjectArray = JArray.Parse(dynamicObject.ToString());
+
+                    if (subObjectArray != null && subObjectArray.Count > 0 && subObjectArray.First() != null)
+                    {
+                        if (subObjectArray.First().GetType() == typeof(JObject))
+                        {
+                            foreach (var subObject in subObjectArray)
+                            {
+                                if (subObject.GetType() == typeof(JObject))
+                                {
+                                    IJEnumerable<JToken> subObjectValue = subObject.Values();
+
+                                    foreach (var subValue in subObjectValue)
+                                    {
+                                        ObjectHierarchylist.Add(new HierarchyObject(subValue.ToString(), level));
+
+                                        if (subValue != null && subValue.HasValues)
+                                        {
+                                            JArray subArray = new JArray(subValue);
+
+                                            GetObjectHierarchy(subArray, level);
+                                            level--;
+                                        }
+                                    }
+                                }
+                                else if (subObject.GetType() == typeof(JArray))
+                                {
+                                    JArray subArray = new JArray(subObject);
+
+                                    GetObjectHierarchy(subArray, level);
+                                    level--;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+            return ObjectHierarchylist;
+        }
+
     }
 }
