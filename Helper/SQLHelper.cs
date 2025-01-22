@@ -1,11 +1,6 @@
-﻿using System;
+﻿using DataFileReader.Class;
 using System.Collections;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DataFileReader.Class;
 
 namespace DataFileReader.Helper
 {
@@ -46,7 +41,6 @@ namespace DataFileReader.Helper
                     }
 
                     sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "] VARCHAR(MAX) NULL";
-
                 }
 
                 sqlQuery += ")";
@@ -105,8 +99,7 @@ namespace DataFileReader.Helper
                             sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "]";
                         }
 
-                        sqlQuery += ") VALUES ("; 
-
+                        sqlQuery += ") VALUES (";
 
                         for (int i = 0; i < fieldData.Length; i++)
                         {

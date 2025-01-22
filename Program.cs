@@ -1,25 +1,22 @@
 ﻿namespace DataFileReader
 {
-    using System;
-    using System.Collections;
-    using System.Data.SqlClient;
-    using System.IO;
-    using System.Linq;
-    using System.Text.RegularExpressions;
     using DataFileReader.Class;
     using DataFileReader.Helper;
-    using System.Text.Json;
     using Newtonsoft.Json.Linq;
+    using System;
+    using System.IO;
+    using System.Linq;
+    using System.Text.Json;
 
-    class Program
+    internal class Program
     {
-        //public static string topDirectory = @"C:\Documents\Personal\Health Data\"; 
+        //public static string topDirectory = @"C:\Documents\Personal\Health Data\";
         public static string topDirectory = @"C:\Documents\Temp\csv\";
 
         public static List<string> FileList = new List<string>();
-        public static List<MetaData> MetaDataList = new List<MetaData>();       
+        public static List<MetaData> MetaDataList = new List<MetaData>();
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             FileList = FileHelper.GetFileList(topDirectory);
 
@@ -60,8 +57,6 @@
             {
                 Console.WriteLine($"Unknown File Extension. NO SUPPORT.");
             }
-
-
         }
 
         public static void ProcessFile_CSV(string fileName, string fileData)
@@ -156,7 +151,7 @@
             List<string> list = new List<string>();
 
             List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
-            HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null);
+            HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null, null);
 
             MetaData metaData = new MetaData();
 
@@ -192,7 +187,6 @@
 
         public static void ProceessFile_TCX(string fileName, string fileData)
         {
-
         }
 
         public static void PrintUniqueFileExtensions()
@@ -225,7 +219,7 @@
             }
         }
 
-        static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
+        private static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
         {
             var dictionary = new Dictionary<string, object>();
 

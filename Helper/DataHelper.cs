@@ -103,7 +103,6 @@ namespace DataFileReader.Helper
 
                 Regex matchingPattern = new Regex("[0-9].*");
                 dataSetName = matchingPattern.Replace(dataSetName, string.Empty);
-
             }
 
             dataSetName = RemoveSpecialCharacters(dataSetName);
@@ -133,7 +132,6 @@ namespace DataFileReader.Helper
             {
                 if (!char.IsLetterOrDigit(character))
                 {
-
                 }
                 else
                 {
@@ -152,8 +150,6 @@ namespace DataFileReader.Helper
         //    {
         //        foreach (var obj in objectArray)
         //        {
-
-
         //            string objectString = obj.ToString();
         //            string dynamicObject = objectString;
 
@@ -174,7 +170,6 @@ namespace DataFileReader.Helper
         //                {
         //                    if (channelObj["source"].ToString().ToLower().Trim() == "")
         //                    {
-
         //                    }
         //                }
         //            }
@@ -235,7 +230,6 @@ namespace DataFileReader.Helper
 
                             //if (subObject["source"].ToString().ToLower().Trim() == "")
                             //{
-
                             //}
                         }
                     }
@@ -295,21 +289,21 @@ namespace DataFileReader.Helper
             return returnedDataArray.ToString();
         }
 
-        public static List<HierarchyObject> GetObjectHierarchy(JArray objectArray, int? level)
+        public static List<HierarchyObject> GetObjectHierarchy(JArray objectArray, int? level, int? parentId)
         {
             //TO MAKE A PARAMETER
-            bool setNameByPath = true;
-
+            bool setNameByPath = false;
 
             level = level is null ? 0 : level.Value;
 
             if (level == 0)
             {
-                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", "", level));
+                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", "", level, parentId));
+                parentId = 0;
             }
 
             level++;
-
+            
             try
             {
                 foreach (var obj in objectArray)
@@ -336,10 +330,11 @@ namespace DataFileReader.Helper
                                 {
                                     IJEnumerable<JToken> subObjectValue = subObject.Values();
 
-                                    int i = 0;
-
                                     foreach (var subValue in subObjectValue)
                                     {
+                                        int i = ObjectHierarchylist.Max(x => x.ID) + 1;
+
+
                                         if ((subValue.Path).ToString().Split('.').Length > 1)
                                         {
                                             string hierarchyObjectName = (subValue.Path).ToString().Split('.')[1];
@@ -349,29 +344,33 @@ namespace DataFileReader.Helper
                                                 hierarchyObjectName = subValue.Path.ToString();
                                             }
 
-                                            ObjectHierarchylist.Add(new HierarchyObject(i, hierarchyObjectName, subValue.ToString(), level));
+
+                                            ObjectHierarchylist.Add(new HierarchyObject(i, hierarchyObjectName, subValue.ToString(), level, parentId));
                                         }
                                         else
                                         {
-                                            ObjectHierarchylist.Add(new HierarchyObject(i, subValue.ToString(), level));
+                                            ObjectHierarchylist.Add(new HierarchyObject(i, subValue.ToString(), level, parentId));
                                         }
 
                                         if (subValue != null && subValue.HasValues)
                                         {
                                             JArray subArray = new JArray(subValue);
 
-                                            GetObjectHierarchy(subArray, level);
-                                            level--;
-                                        }
+                                            parentId = i;
 
-                                        i++;
+                                            if (((JArray)subValue).Count > 1)
+                                            {
+                                                GetObjectHierarchy((JArray)subValue, level, parentId);
+                                                level--;
+                                            }
+                                        }
                                     }
                                 }
                                 else if (subObject.GetType() == typeof(JArray))
                                 {
                                     JArray subArray = new JArray(subObject);
 
-                                    GetObjectHierarchy(subArray, level);
+                                    GetObjectHierarchy(subArray, level, parentId);
                                     level--;
                                 }
                             }
@@ -386,6 +385,5 @@ namespace DataFileReader.Helper
 
             return ObjectHierarchylist;
         }
-
     }
 }
