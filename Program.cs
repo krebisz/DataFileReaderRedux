@@ -85,6 +85,61 @@
             SQLHelper.UpdateSQLTable(metaData, fileContent);
         }
 
+        //public static void ProceessFile_JSON(string fileName, string fileData)
+        //{
+        //    object dynamicObject = new object();
+
+        //    fileData = fileData.Trim().Replace(" ", "");
+        //    fileData = fileData.Trim().Replace("\r", "");
+        //    fileData = fileData.Trim().Replace("\n", "");
+        //    fileData = fileData.Trim().Replace("\t", "");
+
+        //    dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
+
+        //    JArray objectArray = JArray.Parse(dynamicObject.ToString());
+        //    //FormatJSON(dynamicObject.ToString(), 0);
+        //    //var objectDictionary = ConvertToDictionary(dynamicObject);
+
+        //    List<string> list = new List<string>();
+        //    //list = DataHelper.GetFieldList(objectArray);
+
+        //    List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
+        //    HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null);
+
+        //    MetaData metaData = new MetaData();
+
+        //    //metaData.Fields = ConvertToDictionary(HierarchyObject);
+        //    foreach (HierarchyObject hierarchyObject in HierarchyObject)
+        //    {
+        //        System.Type type = hierarchyObject.Value.GetType();
+
+        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
+        //        {
+        //            hierarchyObject.Name = Guid.NewGuid().ToString();
+        //        }
+
+        //        if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+        //        {
+        //            metaData.Fields.Add(hierarchyObject.Name, type);
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+        //        }
+
+        //    }
+
+        //    metaData.GenerateID();
+
+        //    MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+
+        //    if (existingMetaData is null)
+        //    {
+        //        MetaDataList.Add(metaData);
+        //        SQLHelper.CreateSQLTable(metaData);
+        //    }
+        //}
+
         public static void ProceessFile_JSON(string fileName, string fileData)
         {
             object dynamicObject = new object();
@@ -97,15 +152,42 @@
             dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
 
             JArray objectArray = JArray.Parse(dynamicObject.ToString());
-            //FormatJSON(dynamicObject.ToString(), 0);
-            //var objectDictionary = ConvertToDictionary(dynamicObject);
 
             List<string> list = new List<string>();
-            //list = DataHelper.GetFieldList(objectArray);
 
             List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
             HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null);
 
+            MetaData metaData = new MetaData();
+
+            foreach (HierarchyObject hierarchyObject in HierarchyObject)
+            {
+                System.Type type = hierarchyObject.Value.GetType();
+
+                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                {
+                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                }
+
+                if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+                {
+                    metaData.Fields.Add(hierarchyObject.Name, type);
+                }
+                else
+                {
+                    //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+                }
+            }
+
+            metaData.GenerateID();
+
+            MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+
+            if (existingMetaData is null)
+            {
+                MetaDataList.Add(metaData);
+                SQLHelper.CreateSQLTable(metaData);
+            }
         }
 
         public static void ProceessFile_TCX(string fileName, string fileData)

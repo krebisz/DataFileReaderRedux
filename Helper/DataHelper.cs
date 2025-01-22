@@ -297,11 +297,15 @@ namespace DataFileReader.Helper
 
         public static List<HierarchyObject> GetObjectHierarchy(JArray objectArray, int? level)
         {
+            //TO MAKE A PARAMETER
+            bool setNameByPath = true;
+
+
             level = level is null ? 0 : level.Value;
 
             if (level == 0)
             {
-                ObjectHierarchylist.Add(new HierarchyObject("Root", level));
+                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", "", level));
             }
 
             level++;
@@ -332,9 +336,25 @@ namespace DataFileReader.Helper
                                 {
                                     IJEnumerable<JToken> subObjectValue = subObject.Values();
 
+                                    int i = 0;
+
                                     foreach (var subValue in subObjectValue)
                                     {
-                                        ObjectHierarchylist.Add(new HierarchyObject(subValue.ToString(), level));
+                                        if ((subValue.Path).ToString().Split('.').Length > 1)
+                                        {
+                                            string hierarchyObjectName = (subValue.Path).ToString().Split('.')[1];
+
+                                            if (setNameByPath)
+                                            {
+                                                hierarchyObjectName = subValue.Path.ToString();
+                                            }
+
+                                            ObjectHierarchylist.Add(new HierarchyObject(i, hierarchyObjectName, subValue.ToString(), level));
+                                        }
+                                        else
+                                        {
+                                            ObjectHierarchylist.Add(new HierarchyObject(i, subValue.ToString(), level));
+                                        }
 
                                         if (subValue != null && subValue.HasValues)
                                         {
@@ -343,6 +363,8 @@ namespace DataFileReader.Helper
                                             GetObjectHierarchy(subArray, level);
                                             level--;
                                         }
+
+                                        i++;
                                     }
                                 }
                                 else if (subObject.GetType() == typeof(JArray))
