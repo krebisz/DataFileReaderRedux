@@ -1,6 +1,11 @@
 ﻿using DataFileReader.Class;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema;
+using System.Dynamic;
+using System.Linq;
+using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace DataFileReader.Helper
@@ -10,6 +15,9 @@ namespace DataFileReader.Helper
         public static List<string> fieldlist = new List<string>();
 
         public static List<HierarchyObject> ObjectHierarchylist = new List<HierarchyObject>();
+
+
+        #region File Operations
 
         public static string GetFileExtension(string file)
         {
@@ -110,85 +118,6 @@ namespace DataFileReader.Helper
             return dataSetName;
         }
 
-        public static bool HasSpecialChars(string dataString)
-        {
-            return dataString.Any(character => !char.IsLetterOrDigit(character));
-        }
-
-        public static bool IsSpecialCharacter(char character)
-        {
-            return char.IsLetterOrDigit(character);
-        }
-
-        public static string RemoveSpecialCharacters(string name)
-        {
-            char[] separator = { ',', '.' };
-            string[] fileParts = name.Split(separator);
-            name = fileParts.FirstOrDefault();
-
-            string normalizedString = string.Empty;
-
-            foreach (char character in name)
-            {
-                if (!char.IsLetterOrDigit(character))
-                {
-                }
-                else
-                {
-                    normalizedString += character.ToString();
-                }
-            }
-
-            return normalizedString;
-        }
-
-        //public static List<string> GetFieldList(JArray objectArray)
-        //{
-        //    List<string> fieldlist = new List<string>();
-
-        //    try
-        //    {
-        //        foreach (var obj in objectArray)
-        //        {
-        //            string objectString = obj.ToString();
-        //            string dynamicObject = objectString;
-
-        //            //dynamicObject = FormatJSON(objectString, 1);
-        //            dynamicObject = dynamicObject.Trim().Replace("\r", "");
-        //            dynamicObject = dynamicObject.Trim().Replace("\n", "");
-        //            dynamicObject = dynamicObject.Trim().Replace("\t", "");
-        //            dynamicObject = dynamicObject.Trim().Replace("\\", "");
-        //            //dynamicObject = dynamicObject.Trim().Replace(" ", "");
-
-        //            dynamicObject = JsonSerializer.Deserialize<dynamic>(dynamicObject);
-
-        //            JArray subObjectArray = JArray.Parse(dynamicObject);
-
-        //            if (subObjectArray != null && subObjectArray.Count > 0)
-        //            {
-        //                foreach (JObject channelObj in subObjectArray)
-        //                {
-        //                    if (channelObj["source"].ToString().ToLower().Trim() == "")
-        //                    {
-        //                    }
-        //                }
-        //            }
-
-        //            if (subObjectArray != null)
-        //            {
-        //                GetFieldList(subObjectArray);
-        //            }
-
-        //            fieldlist.Add(obj.ToString());
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-
-        //    return fieldlist;
-        //}
 
         public static List<string> GetFieldList(JArray objectArray)
         {
@@ -250,140 +179,299 @@ namespace DataFileReader.Helper
             return fieldlist;
         }
 
-        public static string FormatJSON(string unformattedData, int padOrStrip)
+        #endregion
+
+
+        #region CharacterOperations
+
+        public static string RemoveFaultyCharacterSequences(object stringObject)
         {
+            string objectString = stringObject.ToString().Trim();
+
+            objectString = objectString.Replace(",}", "}");
+            objectString = objectString.Replace(",]", "]");
+
+            return objectString;
+        }
+
+        public static string RemoveSpecialCharacters(string name)
+        {
+            char[] separator = { ',', '.' };
+            string[] fileParts = name.Split(separator);
+            name = fileParts.FirstOrDefault();
+
+            string normalizedString = string.Empty;
+
+            foreach (char character in name)
+            {
+                if (!char.IsLetterOrDigit(character))
+                {
+                }
+                else
+                {
+                    normalizedString += character.ToString();
+                }
+            }
+
+            return normalizedString;
+        }
+
+        public static string RemoveEscapeCharacters(object stringObject)
+        {
+            string objectString = stringObject.ToString().Trim();
+
+            objectString = objectString.Replace("\r", "");
+            objectString = objectString.Replace("\n", "");
+            objectString = objectString.Replace("\t", "");
+            objectString = objectString.Replace(" ", "");
+            
+            return objectString;
+        }
+
+        private static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
+        {
+            var dictionary = new Dictionary<string, object>();
+
+            System.Text.Json.JsonDocument jsonDocument;
+            jsonDocument = (JsonDocument)dynamicObject;
+
+            //Convert dynamic to JsonElement (if using System.Text.Json)
+            JsonElement jsonElement = (JsonElement)dynamicObject;
+
+            foreach (var property in jsonElement.EnumerateObject())
+            {
+#pragma warning disable CS8601 // Possible null reference assignment.
+                dictionary[property.Name] = property.Value.ValueKind switch
+                {
+                    JsonValueKind.String => property.Value.GetString(),
+                    JsonValueKind.Number => property.Value.GetDecimal(), //Use GetInt32, GetDouble, etc., if specific type expected
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Object => property.Value.ToString(), //For nested objects
+                    JsonValueKind.Array => property.Value.ToString(), //For arrays
+                    _ => null //Handle nulls and undefined types
+                };
+#pragma warning restore CS8601 // Possible null reference assignment.
+            }
+
+            return dictionary;
+        }
+
+        #endregion
+
+
+
+
+
+
+
+
+
+
+        public static List<HierarchyObject> GetObjectHierarchy(string objectData, int level, int? parentId)
+        {
+            string formattedData = RemoveEscapeCharacters(objectData);
+            formattedData = RemoveFaultyCharacterSequences(formattedData);
+
+            if (parentId == null) 
+            {
+                level = 0;
+                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", formattedData, level, parentId));
+            }
+
             try
             {
-                switch (padOrStrip)
-                {
-                    case 0:
-                        {
-                            int start = unformattedData.IndexOf('[');
-                            int end = unformattedData.IndexOf("]");
+                JsonNode? jDynamicObject = JsonNode.Parse(formattedData);
 
-                            unformattedData = unformattedData.Substring(start, end - start);
-                            break;
-                        }
-                    case 1:
+                if (jDynamicObject != null)
+                {
+                    if (jDynamicObject.GetType() == typeof(JsonArray))
+                    {
+                        Console.WriteLine("Object is JsonArray at LEVEL: " + jDynamicObject);
+
+                        for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
                         {
-                            unformattedData = "[" + unformattedData + "]";
-                            break;
+                            //GetObjectHierarchy(jDynamicObject.AsArray()[i].ToString());
                         }
-                    case 2:
+
+                    }
+                    if (jDynamicObject.GetType() == typeof(JsonObject))
+                    {
+                        Console.WriteLine("Object is JsonObject");
+
+                        for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
                         {
-                            unformattedData = "{" + unformattedData + "}";
-                            break;
+                            KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+                            string subObjectString = JsonSerializer.Serialize(subObject);
+
+                            //GetObjectHierarchy(subObjectString);
                         }
-                    default:
-                        {
-                            break;
-                        }
+
+
+                    }
+
+
                 }
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
 
-            JArray returnedDataArray = JArray.Parse(unformattedData);
-            return returnedDataArray.ToString();
-        }
-
-        public static List<HierarchyObject> GetObjectHierarchy(JArray objectArray, int? level, int? parentId)
-        {
-            //TO MAKE A PARAMETER
-            bool setNameByPath = false;
-
-            level = level is null ? 0 : level.Value;
-
-            if (level == 0)
-            {
-                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", "", level, parentId));
-                parentId = 0;
-            }
-
-            level++;
-            
-            try
-            {
-                foreach (var obj in objectArray)
-                {
-                    object dynamicObject = new object();
-
-                    string objectString = obj.ToString().Trim().Replace(" ", "");
-                    objectString = obj.ToString().Trim().Replace("\r", "");
-                    objectString = obj.ToString().Trim().Replace("\n", "");
-                    objectString = obj.ToString().Trim().Replace("\t", "");
-
-                    dynamicObject = JsonSerializer.Deserialize<dynamic>(objectString);
-                    dynamicObject = "[" + dynamicObject + "]";
-
-                    JArray subObjectArray = JArray.Parse(dynamicObject.ToString());
-
-                    if (subObjectArray != null && subObjectArray.Count > 0 && subObjectArray.First() != null)
-                    {
-                        if (subObjectArray.First().GetType() == typeof(JObject))
-                        {
-                            foreach (var subObject in subObjectArray)
-                            {
-                                if (subObject.GetType() == typeof(JObject))
-                                {
-                                    IJEnumerable<JToken> subObjectValue = subObject.Values();
-
-                                    foreach (var subValue in subObjectValue)
-                                    {
-                                        int i = ObjectHierarchylist.Max(x => x.ID) + 1;
 
 
-                                        if ((subValue.Path).ToString().Split('.').Length > 1)
-                                        {
-                                            string hierarchyObjectName = (subValue.Path).ToString().Split('.')[1];
-
-                                            if (setNameByPath)
-                                            {
-                                                hierarchyObjectName = subValue.Path.ToString();
-                                            }
 
 
-                                            ObjectHierarchylist.Add(new HierarchyObject(i, hierarchyObjectName, subValue.ToString(), level, parentId));
-                                        }
-                                        else
-                                        {
-                                            ObjectHierarchylist.Add(new HierarchyObject(i, subValue.ToString(), level, parentId));
-                                        }
-
-                                        if (subValue != null && subValue.HasValues)
-                                        {
-                                            JArray subArray = new JArray(subValue);
-
-                                            parentId = i;
-
-                                            if (((JArray)subValue).Count > 1)
-                                            {
-                                                GetObjectHierarchy((JArray)subValue, level, parentId);
-                                                level--;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (subObject.GetType() == typeof(JArray))
-                                {
-                                    JArray subArray = new JArray(subObject);
-
-                                    GetObjectHierarchy(subArray, level, parentId);
-                                    level--;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
 
             return ObjectHierarchylist;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public static string FormatJSONObject(string unformattedData)
+        {
+            string formattedData = RemoveEscapeCharacters(unformattedData);
+            formattedData = RemoveFaultyCharacterSequences(formattedData);
+
+            int level = 0;
+
+            try
+            {
+                JsonNode? jDynamicObject = JsonNode.Parse(formattedData);
+
+                if (jDynamicObject != null)
+                {
+                    if (jDynamicObject.GetType() == typeof(JsonArray))
+                    {
+                        Console.WriteLine("Object is JsonArray at LEVEL: " + jDynamicObject);
+
+                        for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
+                        {
+                            FormatJSONObject(jDynamicObject.AsArray()[i].ToString());
+                        }
+
+                    }
+                    if (jDynamicObject.GetType() == typeof(JsonObject))
+                    {
+                        Console.WriteLine("Object is JsonObject");
+
+                        for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
+                        {
+                            KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+                            string subObjectString = JsonSerializer.Serialize(subObject);
+
+                            FormatJSONObject(subObjectString);
+                        }
+
+
+                    }
+
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+
+            return formattedData;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //public static string FormatJSONObject(string unformattedData)
+        //{
+        //    string formattedData = RemoveEscapeCharacters(unformattedData);
+        //    formattedData = RemoveFaultyCharacterSequences(formattedData);
+
+        //    try
+        //    {
+        //        JsonNode? jDynamicObject = JsonNode.Parse(formattedData);
+
+        //        if (jDynamicObject != null)
+        //        {
+        //            if (jDynamicObject.GetType() == typeof(JsonArray))
+        //            {
+        //                for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
+        //                {
+        //                    FormatJSONObject(jDynamicObject.AsArray()[i].ToString());
+        //                }
+
+        //                Console.WriteLine($"Object is JsonArray: {jDynamicObject + " with " + jDynamicObject.AsArray().Count + " children"}");
+
+        //            }
+        //            if (jDynamicObject.GetType() == typeof(JsonObject))
+        //            {
+        //                //object k = (jDynamicObject as JsonObject).Deserialize<List<Item>>();
+
+        //                for (int i = 0; i < jDynamicObject.AsObject().Count; i++) 
+        //                {
+        //                    KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+        //                    string subObjectString = JsonSerializer.Serialize(subObject);
+
+        //                    FormatJSONObject(subObjectString);
+        //                }
+
+
+        //                Console.WriteLine($"Object is JsonObject: {jDynamicObject}");
+        //            }
+
+
+        //        }
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error: {ex.Message}");
+        //    }
+
+        //    return formattedData;
+        //}
+
+
+
+
+
+
+
     }
 }

@@ -137,51 +137,53 @@
 
         public static void ProceessFile_JSON(string fileName, string fileData)
         {
+            fileData = DataHelper.RemoveEscapeCharacters(fileData);
+            fileData = DataHelper.RemoveFaultyCharacterSequences(fileData);
+
+
             object dynamicObject = new object();
 
-            fileData = fileData.Trim().Replace(" ", "");
-            fileData = fileData.Trim().Replace("\r", "");
-            fileData = fileData.Trim().Replace("\n", "");
-            fileData = fileData.Trim().Replace("\t", "");
-
-            dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
-
-            JArray objectArray = JArray.Parse(dynamicObject.ToString());
-
-            List<string> list = new List<string>();
-
-            List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
-            HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null, null);
-
-            MetaData metaData = new MetaData();
-
-            foreach (HierarchyObject hierarchyObject in HierarchyObject)
+            try
             {
-                System.Type type = hierarchyObject.Value.GetType();
+                //dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
 
-                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(fileData, 0, null);
+
+                MetaData metaData = new MetaData();
+
+                foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
                 {
-                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                    System.Type type = hierarchyObject.Value.GetType();
+
+                    if (String.IsNullOrEmpty(hierarchyObject.Name))
+                    {
+                        hierarchyObject.Name = Guid.NewGuid().ToString();
+                    }
+
+                    if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+                    {
+                        metaData.Fields.Add(hierarchyObject.Name, type);
+                    }
+                    else
+                    {
+                        //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+                    }
                 }
 
-                if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+                metaData.GenerateID();
+
+                MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+
+                if (existingMetaData is null)
                 {
-                    metaData.Fields.Add(hierarchyObject.Name, type);
+                    MetaDataList.Add(metaData);
+                    //SQLHelper.CreateSQLTable(metaData);
                 }
-                else
-                {
-                    //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-                }
+
             }
-
-            metaData.GenerateID();
-
-            MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-            if (existingMetaData is null)
+            catch (Exception ex)
             {
-                MetaDataList.Add(metaData);
-                SQLHelper.CreateSQLTable(metaData);
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
@@ -219,33 +221,6 @@
             }
         }
 
-        private static Dictionary<string, object> ConvertToDictionary(dynamic dynamicObject)
-        {
-            var dictionary = new Dictionary<string, object>();
 
-            System.Text.Json.JsonDocument jsonDocument;
-            jsonDocument = (JsonDocument)dynamicObject;
-
-            //Convert dynamic to JsonElement (if using System.Text.Json)
-            JsonElement jsonElement = (JsonElement)dynamicObject;
-
-            foreach (var property in jsonElement.EnumerateObject())
-            {
-#pragma warning disable CS8601 // Possible null reference assignment.
-                dictionary[property.Name] = property.Value.ValueKind switch
-                {
-                    JsonValueKind.String => property.Value.GetString(),
-                    JsonValueKind.Number => property.Value.GetDecimal(), //Use GetInt32, GetDouble, etc., if specific type expected
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Object => property.Value.ToString(), //For nested objects
-                    JsonValueKind.Array => property.Value.ToString(), //For arrays
-                    _ => null //Handle nulls and undefined types
-                };
-#pragma warning restore CS8601 // Possible null reference assignment.
-            }
-
-            return dictionary;
-        }
     }
 }
