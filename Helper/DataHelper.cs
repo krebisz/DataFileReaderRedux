@@ -4,6 +4,7 @@ using Newtonsoft.Json.Schema;
 using System.Dynamic;
 using System.Linq;
 using System.Net;
+using System.Reflection.Emit;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -277,7 +278,10 @@ namespace DataFileReader.Helper
             {
                 level = 0;
                 ObjectHierarchylist.Add(new HierarchyObject(0, "Root", formattedData, level, parentId));
+                parentId = 0;
             }
+
+            level++; 
 
             try
             {
@@ -287,24 +291,60 @@ namespace DataFileReader.Helper
                 {
                     if (jDynamicObject.GetType() == typeof(JsonArray))
                     {
-                        Console.WriteLine("Object is JsonArray at LEVEL: " + jDynamicObject);
+                        //Console.WriteLine("Object is JsonArray at LEVEL: " + level + " with " + jDynamicObject.AsArray().Count + " children.");
 
                         for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
                         {
-                            //GetObjectHierarchy(jDynamicObject.AsArray()[i].ToString());
+                            GetObjectHierarchy(jDynamicObject.AsArray()[i].ToString(), level, parentId);
+                            level--;
+                            parentId++;
                         }
 
                     }
                     if (jDynamicObject.GetType() == typeof(JsonObject))
                     {
-                        Console.WriteLine("Object is JsonObject");
+                        //Console.WriteLine("Object is JsonObject at LEVEL: " + level + " with " + jDynamicObject.AsObject().Count + " children.");
 
                         for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
                         {
                             KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
-                            string subObjectString = JsonSerializer.Serialize(subObject);
+                            string subObjectString = JsonSerializer.Serialize(subObject.Value);
+                            subObjectString = RemoveEscapeCharacters(subObjectString);
+                            subObjectString = RemoveFaultyCharacterSequences(subObjectString);
 
-                            //GetObjectHierarchy(subObjectString);
+                            //Console.WriteLine("OBJECT: " + subObject.Key + " at LEVEL: " + level + " has VALUE: " + subObjectString);
+
+                            //WriteToConsole(subObject.Key, level.ToString(), subObjectString, ConsoleColor.Blue);
+
+
+                            HierarchyObject hierarchyObject = (new HierarchyObject(0, subObject.Key, formattedData, level, parentId));
+                            WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, ConsoleColor.Blue);
+
+                            if (subObject.Value.GetType() == typeof(JsonObject))
+                            {
+                                //HierarchyObject hierarchyObject = (new HierarchyObject(0, subObject.Key, formattedData, level, parentId));
+                                ////hierarchyObject.Fields = subObject;
+                                hierarchyObject.GenerateID();
+                                ObjectHierarchylist.Add(hierarchyObject);
+
+                                //WriteToConsole(hierarchyObject.Name, hierarchyObject.Level.ToString(), hierarchyObject.Value, ConsoleColor.Blue);
+
+
+                                //Console.WriteLine("SubObject is Type JsonObject");
+                                GetObjectHierarchy(JsonSerializer.Serialize(subObject.Value), level, parentId);
+                                level--;
+                            }
+                            else if (subObject.Value.GetType().Name == "JsonValueOfElement")
+                            {
+                                //Console.WriteLine("SubObject is Type JsonValue");
+                            }
+                            else
+                            {
+                                //Console.WriteLine("SubObject is Type Other");
+                            }
+
+                                parentId++;
+
                         }
 
 
@@ -325,6 +365,38 @@ namespace DataFileReader.Helper
 
 
             return ObjectHierarchylist;
+        }
+
+
+        public static void WriteToConsole(string key, string Id, string level, string value, ConsoleColor colour)
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(" OBJECT: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(key);
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(" ID: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(Id);
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(" LEVEL:  ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(level);
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(" VALUE: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(value);
+
+            Console.WriteLine();
+
+            //Console.WriteLine("OBJECT: " + subObject.Key + " at LEVEL: " + level + " has VALUE: " + subObjectString);
         }
 
 

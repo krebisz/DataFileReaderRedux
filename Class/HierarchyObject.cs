@@ -1,4 +1,8 @@
-﻿namespace DataFileReader.Class
+﻿using System.Collections.Generic;
+using System.Text.Json.Nodes;
+using System.Xml.Linq;
+
+namespace DataFileReader.Class
 {
     public class HierarchyObject
     {
@@ -11,6 +15,10 @@
         public string Value { get; set; }
 
         public int? Level { get; set; }
+
+        public KeyValuePair<string, JsonNode?> Element { get; set; }
+
+        public Dictionary<string, string> Field { get; set; }
 
         public HierarchyObject()
         {
@@ -33,5 +41,31 @@
             Level = level;
             ParentID = parentId;
         }
+
+        public void GenerateID()
+        {
+            Field = new Dictionary<string, string>();
+
+            JsonNode? jDynamicObject = JsonNode.Parse(Value);
+
+            for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
+            {
+                KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+
+                Field.Add(subObject.Key, subObject.Value.ToString());
+            };
+
+            ID = Field.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
+        }
+
+
+        public void GenerateID(KeyValuePair<string, JsonNode?> element)
+        {
+            //Field = element;
+            //Field = Field.Add(element(x => x.Key, x => x.Value);
+            //ID = Fields.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
+        }
+
+
     }
 }
