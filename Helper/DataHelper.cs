@@ -17,6 +17,7 @@ namespace DataFileReader.Helper
 
         public static List<HierarchyObject> ObjectHierarchylist = new List<HierarchyObject>();
 
+        public static int IdMax = 0;
 
         #region File Operations
 
@@ -269,7 +270,7 @@ namespace DataFileReader.Helper
 
 
 
-        public static List<HierarchyObject> GetObjectHierarchy(string objectData, int level, int? parentId)
+        public static List<HierarchyObject> GetObjectHierarchy(int id, string name, string objectData, int level, int? parentId)
         {
             string formattedData = RemoveEscapeCharacters(objectData);
             formattedData = RemoveFaultyCharacterSequences(formattedData);
@@ -277,11 +278,26 @@ namespace DataFileReader.Helper
             if (parentId == null) 
             {
                 level = 0;
-                ObjectHierarchylist.Add(new HierarchyObject(0, "Root", formattedData, level, parentId));
-                parentId = 0;
+                name = "Root";
+                HierarchyObject hierarchyObject = new HierarchyObject(id, name, formattedData, level, parentId);
+                hierarchyObject.Value = GenerateValue(hierarchyObject.Value);
+
+                ObjectHierarchylist.Add(hierarchyObject);
+                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, "", ConsoleColor.Blue);
+            }
+            else
+            {
+            //    id = (int)(parentId + 1);
+            //    level++;
+            //    HierarchyObject hierarchyObject = new HierarchyObject(id, objectName, formattedData, level, parentId);
+            //    hierarchyObject.Value = GenerateValue(hierarchyObject.Value);
+            //    //hierarchyObject.GenerateID();
+            //    ObjectHierarchylist.Add(hierarchyObject);
+
+            //    WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
             }
 
-            level++; 
+            parentId = id; 
 
             try
             {
@@ -291,19 +307,27 @@ namespace DataFileReader.Helper
                 {
                     if (jDynamicObject.GetType() == typeof(JsonArray))
                     {
-                        //Console.WriteLine("Object is JsonArray at LEVEL: " + level + " with " + jDynamicObject.AsArray().Count + " children.");
-
                         for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
                         {
-                            GetObjectHierarchy(jDynamicObject.AsArray()[i].ToString(), level, parentId);
-                            level--;
-                            parentId++;
-                        }
+                            int sublevel = level + 1;
+                            id = id + 1;
+                            string subName = name + "[" + i + "]";
+                            string value = GenerateValue(jDynamicObject.AsArray()[i].ToString());
+                            ////hierarchyObject.GenerateID();
 
+                            IdMax = IdMax + 1;
+                            HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, value, sublevel, parentId));
+                            ObjectHierarchylist.Add(hierarchyObject);
+
+                            WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
+
+                            GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, jDynamicObject.AsArray()[i].ToString(), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+                            //level = level - 1;
+                        }
                     }
                     if (jDynamicObject.GetType() == typeof(JsonObject))
                     {
-                        //Console.WriteLine("Object is JsonObject at LEVEL: " + level + " with " + jDynamicObject.AsObject().Count + " children.");
+                        parentId = id;
 
                         for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
                         {
@@ -312,96 +336,204 @@ namespace DataFileReader.Helper
                             subObjectString = RemoveEscapeCharacters(subObjectString);
                             subObjectString = RemoveFaultyCharacterSequences(subObjectString);
 
-                            //Console.WriteLine("OBJECT: " + subObject.Key + " at LEVEL: " + level + " has VALUE: " + subObjectString);
-
-                            //WriteToConsole(subObject.Key, level.ToString(), subObjectString, ConsoleColor.Blue);
-
-
-                            HierarchyObject hierarchyObject = (new HierarchyObject(0, subObject.Key, formattedData, level, parentId));
-                            WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, ConsoleColor.Blue);
-
                             if (subObject.Value.GetType() == typeof(JsonObject))
                             {
-                                //HierarchyObject hierarchyObject = (new HierarchyObject(0, subObject.Key, formattedData, level, parentId));
-                                ////hierarchyObject.Fields = subObject;
-                                hierarchyObject.GenerateID();
+                                int sublevel = level + 1;
+                                id = id + 1;
+                                string value = GenerateValue(jDynamicObject.AsObject()[i].ToString());
+                                ////hierarchyObject.GenerateID();
+
+                                IdMax = IdMax + 1;
+                                HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, value, sublevel, parentId));
                                 ObjectHierarchylist.Add(hierarchyObject);
 
-                                //WriteToConsole(hierarchyObject.Name, hierarchyObject.Level.ToString(), hierarchyObject.Value, ConsoleColor.Blue);
+                                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
 
-
-                                //Console.WriteLine("SubObject is Type JsonObject");
-                                GetObjectHierarchy(JsonSerializer.Serialize(subObject.Value), level, parentId);
-                                level--;
+                                GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, JsonSerializer.Serialize(subObject.Value), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+                                ////GetObjectHierarchy(hierarchyObject.Name, JsonSerializer.Serialize(subObject.Value), (int)hierarchyObject.Level, hierarchyObject.ID);
+                                //level = level - 1;
                             }
                             else if (subObject.Value.GetType().Name == "JsonValueOfElement")
                             {
                                 //Console.WriteLine("SubObject is Type JsonValue");
+                                int sublevel = level + 1;
+                                id = id + 1;
+
+                                IdMax = IdMax + 1;
+                                HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, subObject.Value.ToString(), sublevel, parentId));
+                                ObjectHierarchylist.Add(hierarchyObject);
+
+                                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Green);
+                            }
+                            else if (subObject.Value.GetType() == typeof(JsonArray))
+                            {
+                                if (subObject.Key != null)
+                                {
+                                    int sublevel = level + 1;
+                                    IdMax = IdMax + 1;
+                                    string value = GenerateValue(subObject.Value.ToString());
+
+                                    HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, value, sublevel, parentId));
+                                    ObjectHierarchylist.Add(hierarchyObject);
+
+                                    WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
+                                }
+
+                                if (subObject.Value != null && subObject.Value.AsArray().Count() > 0)
+                                {
+                                    parentId = IdMax;
+                                    int sublevel = level + 2;
+
+                                    for (int j = 0; j < subObject.Value.AsArray().Count; j++)
+                                    {
+
+                                        id = id + 1;
+                                        string subName = subObject.Key + "[" + j + "]";
+                                        string value = GenerateValue(subObject.Value.AsArray()[j].ToString());
+                                        ////hierarchyObject.GenerateID();
+
+                                        IdMax = IdMax + 1;
+                                        HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, value, sublevel, parentId));
+                                        ObjectHierarchylist.Add(hierarchyObject);
+
+                                        WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
+
+                                        GetObjectHierarchy(IdMax, subName, subObject.Value.AsArray()[j].ToString(), sublevel, parentId);
+                                        //level = level - 1;
+                                    }
+                                }
                             }
                             else
                             {
-                                //Console.WriteLine("SubObject is Type Other");
+                                Console.WriteLine("SubObject is Type Other");
                             }
 
-                                parentId++;
-
+                            ////parentId++;
                         }
-
-
                     }
-
-
                 }
-
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
 
-
-
-
-
-
             return ObjectHierarchylist;
         }
 
 
-        public static void WriteToConsole(string key, string Id, string level, string value, ConsoleColor colour)
+
+
+
+
+
+
+
+
+        public static void WriteToConsole(string key, string Id, string level, string value, string parent, ConsoleColor colour)
         {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   ID: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(Id.PadRight(2));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   PARENT: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(parent.PadRight(2));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   LEVEL: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(level.PadRight(2));
+
+
+
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write(" OBJECT: ");
 
             Console.ForegroundColor = colour;
-            Console.Write(key);
+            int padLevel = (Int32.Parse(level) * 2);
+            string paddedPrefix = string.Empty.PadLeft(padLevel);
+            string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
+
+            Console.Write(paddedKey);
+
+
 
             Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" ID: ");
+            Console.Write("   VALUE: ");
 
             Console.ForegroundColor = colour;
-            Console.Write(Id);
+            Console.Write(value.PadRight(70));
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" LEVEL:  ");
 
-            Console.ForegroundColor = colour;
-            Console.Write(level);
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" VALUE: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(value);
 
             Console.WriteLine();
-
-            //Console.WriteLine("OBJECT: " + subObject.Key + " at LEVEL: " + level + " has VALUE: " + subObjectString);
         }
 
 
 
+        public static string GenerateValue(string jsonObject)
+        {
+            string value = string.Empty;
 
+            try
+            {
+                var parsedValue = JsonNode.Parse(jsonObject);
+
+                if (parsedValue.GetType() == typeof(JsonArray))
+                {
+                    for (int i = 0; i < parsedValue.AsArray().Count; i++)
+                    {
+                        JsonNode? parsedObject = parsedValue.AsArray()[i];
+
+                        if (parsedObject != null)
+                        {
+                            for (int j = 0; j < parsedObject.AsObject().Count; j++)
+                            {
+                                value = value + "[" + parsedObject[j].GetPropertyName() + "], ";
+                            }
+
+                            //KeyValuePair<string, JsonNode?> objectKeyValuePair = parsedValue.AsArray()[i].;
+                            //value = value + "[" + objectKeyValuePair.Key + "], ";
+                        }
+                    }
+                }
+
+                if (parsedValue.GetType() == typeof(JsonObject))
+                {
+                    for (int i = 0; i < parsedValue.AsObject().Count; i++)
+                    {
+                        KeyValuePair<string, JsonNode?> objectKeyValuePair = parsedValue.AsObject().GetAt(i);
+                        value = value + "[" + objectKeyValuePair.Key + "], ";
+                    }
+                }
+
+                if (parsedValue.GetType().Name == "JsonValueOfElement")
+                {
+                    for (int i = 0; i < parsedValue.AsArray().Count; i++)
+                    {
+                        KeyValuePair<string, JsonNode?> objectKeyValuePair = parsedValue.AsObject().GetAt(i);
+                        value = value + "[" + objectKeyValuePair.Key + "], ";
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return value;
+        }
 
 
 

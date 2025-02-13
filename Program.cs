@@ -55,7 +55,7 @@
             }
             else
             {
-                Console.WriteLine($"Unknown File Extension. NO SUPPORT.");
+                //Console.WriteLine($"Unknown File Extension. NO SUPPORT.");
             }
         }
 
@@ -147,7 +147,7 @@
             {
                 //dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
 
-                List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(fileData, 0, null);
+                List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", fileData, 0, null);
 
                 MetaData metaData = new MetaData();
 
