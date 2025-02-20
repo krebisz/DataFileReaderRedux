@@ -336,7 +336,18 @@ namespace DataFileReader.Helper
                             subObjectString = RemoveEscapeCharacters(subObjectString);
                             subObjectString = RemoveFaultyCharacterSequences(subObjectString);
 
-                            if (subObject.Value.GetType() == typeof(JsonObject))
+                            if (subObject.Value == null)
+                            {
+                                int sublevel = level + 1;
+                                id = id + 1;
+
+                                IdMax = IdMax + 1;
+                                HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, string.Empty, sublevel, parentId));
+                                ObjectHierarchylist.Add(hierarchyObject);
+
+                                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Green);
+                            }
+                            else if (subObject.Value.GetType() == typeof(JsonObject))
                             {
                                 int sublevel = level + 1;
                                 id = id + 1;
@@ -497,13 +508,40 @@ namespace DataFileReader.Helper
 
                         if (parsedObject != null)
                         {
-                            for (int j = 0; j < parsedObject.AsObject().Count; j++)
+                            if (parsedObject.GetType() == typeof(JsonObject))
                             {
-                                value = value + "[" + parsedObject[j].GetPropertyName() + "], ";
-                            }
+                                for (int j = 0; j < parsedObject.AsObject().Count; j++)
+                                {
+                                    string component = string.Empty;
 
-                            //KeyValuePair<string, JsonNode?> objectKeyValuePair = parsedValue.AsArray()[i].;
-                            //value = value + "[" + objectKeyValuePair.Key + "], ";
+                                    if (parsedObject[j] != null)
+                                    {
+                                        component = "[" + parsedObject[j].GetPropertyName() + "]";
+                                    }
+
+                                    value = value + component + ", ";
+                                }
+
+                                //KeyValuePair<string, JsonNode?> objectKeyValuePair = parsedValue.AsArray()[i].;
+                                //value = value + "[" + objectKeyValuePair.Key + "], ";
+                            }
+                            if (parsedObject.GetType().Name == "JsonValueOfElement")
+                            {
+                                value = "[" + parsedObject.AsValue() + "]";
+
+
+                                //for (int j = 0; j < parsedObject.AsArray().Count; j++)
+                                //{
+                                //    string component = string.Empty;
+
+                                //    if (parsedObject[j] != null)
+                                //    {
+                                //        component = "[" + parsedObject[j].GetPropertyName() + "]";
+                                //    }
+
+                                //    value = value + component + ", ";
+                                //}
+                            }
                         }
                     }
                 }

@@ -1,0 +1,7 @@
+﻿
+
+DATE: 2025-02-19
+------------------------------------------------------------------------------------------------------------------------------
+FOR DATAFILEREADER:
+-Exception message for certain hierarchy objects needs suppression
+-Metadatafields not adding already found fields for new parent
