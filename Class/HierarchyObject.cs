@@ -10,6 +10,7 @@ namespace DataFileReader.Class
 
         public int? ParentID { get; set; }
 
+
         public string Name { get; set; }
 
         public string Value { get; set; }
@@ -19,6 +20,15 @@ namespace DataFileReader.Class
         public KeyValuePair<string, JsonNode?> Element { get; set; }
 
         public Dictionary<string, string> Field { get; set; }
+
+        public string ClassID { get; set; }
+
+
+
+
+
+
+
 
         public HierarchyObject()
         {
@@ -58,6 +68,29 @@ namespace DataFileReader.Class
             ID = Field.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
         }
 
+        public void GenerateHierarchyClassID(List<HierarchyObject> hierarchyList, int? Id = null)
+        {
+            if (Id == null)
+            {
+                Id = ID;
+            }
+
+            this.ClassID = this.ClassID + Id;
+            //ID = Id.Value;
+
+            HierarchyObject obj = hierarchyList.FirstOrDefault(x => x.ID == Id);
+
+            if (obj != null)
+            {
+                GenerateHierarchyClassID(hierarchyList, obj.ParentID);
+            }
+        }
+
+
+        public void GenerateClassID()
+        {
+
+        }
 
         public void GenerateID(KeyValuePair<string, JsonNode?> element)
         {
