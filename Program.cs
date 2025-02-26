@@ -162,54 +162,12 @@
         }
 
 
-
-        //public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
-        //{
-        //    MetaData metaData = new MetaData();
-
-        //    foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
-        //    {
-        //        System.Type type = hierarchyObject.Value.GetType();
-
-        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
-        //        {
-        //            hierarchyObject.Name = Guid.NewGuid().ToString();
-        //        }
-
-        //        if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
-        //        {
-        //            metaData.Fields.Add(hierarchyObject.Name, type);
-        //        }
-        //        else
-        //        {
-        //            //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-        //        }
-        //    }
-
-        //    metaData.GenerateID();
-
-        //    MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-        //    if (existingMetaData is null)
-        //    {
-        //        MetaDataList.Add(metaData);
-        //    }
-        //}
-
-
-
-
-
         public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
         {
-            DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
+            MetaData metaData = new MetaData();
 
-            foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
+            foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
             {
-                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
-
-                MetaData metaData = new MetaData();
-
                 System.Type type = hierarchyObject.Value.GetType();
 
                 if (String.IsNullOrEmpty(hierarchyObject.Name))
@@ -217,35 +175,81 @@
                     hierarchyObject.Name = Guid.NewGuid().ToString();
                 }
 
-                metaData.Fields.Add(hierarchyObject.Value, type);
+                if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+                {
+                    metaData.Fields.Add(hierarchyObject.Name, type);
+                }
+                else
+                {
+                    //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+                }
+            }
 
+            metaData.GenerateID();
 
-                //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
-                metaData.GenerateID();
+            MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
 
-                metaData.Name = hierarchyObject.Name;
-                metaData.Type = hierarchyObject.ClassID;
-                metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
-
-
-
-                var parentHierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObject.ParentID);
-
-
-                //hierarchyObject.MetaDataID = metaData.RefVal;
-
+            if (existingMetaData is null)
+            {
                 MetaDataList.Add(metaData);
             }
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine();
-            Console.WriteLine("METADATA:");
-
-            foreach (MetaData metaData in MetaDataList)
-            {
-                PrintFields(metaData);
-            }
         }
+
+
+
+
+
+        //public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
+        //{
+        //    foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
+        //    {
+
+        //        MetaData metaData = new MetaData();
+
+        //        System.Type type = hierarchyObject.Value.GetType();
+
+        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
+        //        {
+        //            hierarchyObject.Name = Guid.NewGuid().ToString();
+        //        }
+
+        //        metaData.Fields.Add(hierarchyObject.Value, type);
+
+        //        //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
+        //        metaData.GenerateID();
+
+        //        metaData.Name = hierarchyObject.Name;
+        //        metaData.Type = hierarchyObject.ClassID;
+        //        metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+
+
+
+        //        var parentHierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObject.ParentID);
+
+
+
+        //        metaData.GenerateID();
+
+        //        metaData.Name = hierarchyObject.Name;
+        //        metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+        //        metaData.Type = hierarchyObject.ClassID;
+
+        //        hierarchyObject.MetaDataID = metaData.RefVal;
+
+
+        //        MetaDataList.Add(metaData);
+        //    }
+
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.WriteLine();
+        //    Console.WriteLine("METADATA:");
+
+        //    foreach (MetaData metaData in MetaDataList)
+        //    {
+        //        PrintFields(metaData);
+        //    }
+        //}
+
 
 
         public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
@@ -417,6 +421,7 @@
 
 
 
+
         public static void PrintUniqueFileExtensions()
         {
             List<string> fileExtensions = DataHelper.GetDistinctFileExtensions(FileList);
@@ -485,5 +490,5 @@
 
         }
 
+        }
     }
-}

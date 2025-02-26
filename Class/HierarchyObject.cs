@@ -22,6 +22,8 @@ namespace DataFileReader.Class
 
         public int? MetaDataID { get; set; }
 
+        public string MetaDataID { get; set; }
+
         public string ClassID { get; set; }
 
 

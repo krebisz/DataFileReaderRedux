@@ -282,6 +282,9 @@ namespace DataFileReader.Helper
                 name = "Root";
                 HierarchyObject hierarchyObject = new HierarchyObject(id, name, formattedData, level, parentId);
 
+                //hierarchyObject.Value = GenerateValue(hierarchyObject.Value);
+                hierarchyObject.ClassID = "Container";
+
                 (string, string) output = GenerateValue(hierarchyObject);
                 //hierarchyObject.ClassID = "Container";
                 hierarchyObject.Value = output.Item1;
@@ -329,6 +332,7 @@ namespace DataFileReader.Helper
                                 HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, output.Item1, sublevel, parentId));
                                 hierarchyObject.ClassID = "Container";
                                 //hierarchyObject.ClassID = output.Item2;
+
                                 ObjectHierarchylist.Add(hierarchyObject);
 
                                 //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
@@ -368,8 +372,10 @@ namespace DataFileReader.Helper
                                     (string, string) output = GenerateValue(jDynamicObject.AsObject()[i].ToString());
 
                                     IdMax = IdMax + 1;
+
                                     HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, output.Item1, sublevel, parentId));
                                     //hierarchyObject.ClassID = output.Item2;
+
                                     hierarchyObject.ClassID = "Container";
 
                                     ObjectHierarchylist.Add(hierarchyObject);
@@ -404,8 +410,9 @@ namespace DataFileReader.Helper
 
 
                                         HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, output.Item1, sublevel, parentId));
-                                        hierarchyObject.ClassID = output.Item2      ;
+                                        hierarchyObject.ClassID = output.Item2;
                                         //hierarchyObject.ClassID = "Container";
+
 
                                         ObjectHierarchylist.Add(hierarchyObject);
 
@@ -426,9 +433,11 @@ namespace DataFileReader.Helper
                                             ////hierarchyObject.GenerateID();
 
                                             IdMax = IdMax + 1;
+
                                             HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, output.Item1, sublevel, parentId));
                                             hierarchyObject.ClassID = output.Item2;
                                             //hierarchyObject.ClassID = "Container";
+
 
                                             ObjectHierarchylist.Add(hierarchyObject);
 
