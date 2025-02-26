@@ -4,13 +4,22 @@
     {
         public int ID { get; set; }
 
+        public int ParentID { get; set; }
+
         public string Name { get; set; }
+
+        public string RefVal { get; set; }
+
+        public string Type { get; set; }
+
+
 
         public Dictionary<string, Type> Fields { get; set; }
 
         public MetaData()
         {
             ID = 0;
+            ParentID = -1;
             Name = string.Empty;
             Fields = new Dictionary<string, Type>();
         }
@@ -18,6 +27,7 @@
         public MetaData(string name)
         {
             ID = 0;
+            ParentID = -1;
             Name = name;
             Fields = new Dictionary<string, Type>();
         }
@@ -25,6 +35,27 @@
         public MetaData(string name, string headerLine)
         {
             ID = 0;
+            ParentID = -1;
+            Name = name;
+            Fields = new Dictionary<string, Type>();
+
+            string[] fieldNames = headerLine.Split(',');
+
+            foreach (string fieldName in fieldNames)
+            {
+                if (!string.IsNullOrWhiteSpace(fieldName))
+                {
+                    Fields[fieldName.Replace(" ", string.Empty).Trim()] = typeof(string); // Default to type string
+                }
+            }
+
+            GenerateID();
+        }
+
+        public MetaData(string name, string headerLine, int parentID)
+        {
+            ID = 0;
+            ParentID = parentID;
             Name = name;
             Fields = new Dictionary<string, Type>();
 

@@ -10,7 +10,6 @@ namespace DataFileReader.Class
 
         public int? ParentID { get; set; }
 
-
         public string Name { get; set; }
 
         public string Value { get; set; }
@@ -19,7 +18,9 @@ namespace DataFileReader.Class
 
         public KeyValuePair<string, JsonNode?> Element { get; set; }
 
-        public Dictionary<string, string> Field { get; set; }
+        public Dictionary<string, Type> Fields { get; set; }
+
+        public int? MetaDataID { get; set; }
 
         public string ClassID { get; set; }
 
@@ -33,6 +34,7 @@ namespace DataFileReader.Class
         public HierarchyObject()
         {
             ID = 0;
+            Fields = new Dictionary<string, Type>();
         }
 
         public HierarchyObject(int id, string value, int? level, int? parentId)
@@ -41,6 +43,7 @@ namespace DataFileReader.Class
             Value = value;
             Level = level;
             ParentID = parentId;
+            Fields = new Dictionary<string, Type>();
         }
 
         public HierarchyObject(int id, string name, string value, int? level, int? parentId)
@@ -50,22 +53,39 @@ namespace DataFileReader.Class
             Value = value;
             Level = level;
             ParentID = parentId;
+            Fields = new Dictionary<string, Type>();
         }
 
-        public void GenerateID()
+        //public void GenerateID()
+        //{
+        //    Field = new Dictionary<string, string>();
+
+        //    JsonNode? jDynamicObject = JsonNode.Parse(Value);
+
+        //    for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
+        //    {
+        //        KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+
+        //        Field.Add(subObject.Key, subObject.Value.ToString());
+        //    };
+
+        //    ID = Field.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
+        //}
+
+        public void GenerateMetaDataID()
         {
-            Field = new Dictionary<string, string>();
+            //Fields = new Dictionary<string, string>();
 
-            JsonNode? jDynamicObject = JsonNode.Parse(Value);
+            //JsonNode? jDynamicObject = JsonNode.Parse(Value);
 
-            for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
-            {
-                KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+            //for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
+            //{
+            //    KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
 
-                Field.Add(subObject.Key, subObject.Value.ToString());
-            };
+            //    Fields.Add(subObject.Key, subObject.Value);
+            //};
 
-            ID = Field.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
+            MetaDataID = Fields.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
         }
 
         public void GenerateHierarchyClassID(List<HierarchyObject> hierarchyList, int? Id = null)

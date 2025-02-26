@@ -149,37 +149,7 @@
 
                 List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", fileData, 0, null);
 
-                MetaData metaData = new MetaData();
-
-                foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
-                {
-                    System.Type type = hierarchyObject.Value.GetType();
-
-                    if (String.IsNullOrEmpty(hierarchyObject.Name))
-                    {
-                        hierarchyObject.Name = Guid.NewGuid().ToString();
-                    }
-
-                    if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
-                    {
-                        metaData.Fields.Add(hierarchyObject.Name, type);
-                    }
-                    else
-                    {
-                        //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-                    }
-                }
-
-                metaData.GenerateID();
-
-                MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-                if (existingMetaData is null)
-                {
-                    MetaDataList.Add(metaData);
-                    //SQLHelper.CreateSQLTable(metaData);
-                }
-
+                CreateMetaData(HierarchyObjectList);
             }
             catch (Exception ex)
             {
@@ -190,6 +160,262 @@
         public static void ProceessFile_TCX(string fileName, string fileData)
         {
         }
+
+
+
+        //public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
+        //{
+        //    MetaData metaData = new MetaData();
+
+        //    foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
+        //    {
+        //        System.Type type = hierarchyObject.Value.GetType();
+
+        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
+        //        {
+        //            hierarchyObject.Name = Guid.NewGuid().ToString();
+        //        }
+
+        //        if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+        //        {
+        //            metaData.Fields.Add(hierarchyObject.Name, type);
+        //        }
+        //        else
+        //        {
+        //            //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+        //        }
+        //    }
+
+        //    metaData.GenerateID();
+
+        //    MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+
+        //    if (existingMetaData is null)
+        //    {
+        //        MetaDataList.Add(metaData);
+        //    }
+        //}
+
+
+
+
+
+        public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
+        {
+            DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
+
+            foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
+            {
+                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
+
+                MetaData metaData = new MetaData();
+
+                System.Type type = hierarchyObject.Value.GetType();
+
+                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                {
+                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                }
+
+                metaData.Fields.Add(hierarchyObject.Value, type);
+
+
+                //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
+                metaData.GenerateID();
+
+                metaData.Name = hierarchyObject.Name;
+                metaData.Type = hierarchyObject.ClassID;
+                metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+
+
+
+                var parentHierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObject.ParentID);
+
+
+                //hierarchyObject.MetaDataID = metaData.RefVal;
+
+                MetaDataList.Add(metaData);
+            }
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            Console.WriteLine("METADATA:");
+
+            foreach (MetaData metaData in MetaDataList)
+            {
+                PrintFields(metaData);
+            }
+        }
+
+
+        public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
+        {
+            DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
+
+            foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
+            {
+                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
+
+                MetaData metaData = new MetaData();
+
+                System.Type type = hierarchyObject.Value.GetType();
+
+                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                {
+                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                }
+
+                metaData.Fields.Add(hierarchyObject.Value, type);
+
+
+                //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
+                metaData.GenerateID();
+
+                metaData.Name = hierarchyObject.Name;
+                metaData.Type = hierarchyObject.ClassID;
+                //metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+                int? referenceValue = null;             
+                metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList, hierarchyObject.ID, ref referenceValue).ToString();
+
+
+
+
+                MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.RefVal == metaData.RefVal);
+
+                if (existingMetaData is null && metaData.Type != "Element")
+                {
+                    MetaDataList.Add(metaData);
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            Console.WriteLine("METADATA:");
+
+            foreach (MetaData metaData in MetaDataList)
+            {
+                PrintFields(metaData);
+            }
+        }
+
+
+
+
+
+
+
+
+        public static int? GetMetaDataObjectReferenceValue(List<HierarchyObject> HierarchyObjectList, int hierarchyObjectID, ref int? referenceValue)
+        {
+            if (referenceValue == null) 
+            {
+                referenceValue = 0;
+            }
+
+            HierarchyObject hierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObjectID);
+
+
+            if (hierarchyObject != null)
+            {
+                referenceValue = referenceValue + hierarchyObject.MetaDataID;
+
+                if (hierarchyObject.ParentID != null && hierarchyObject.ParentID > -1)
+                {
+                    GetMetaDataObjectReferenceValue(HierarchyObjectList, (int)hierarchyObject.ParentID, ref referenceValue);
+                }
+            }
+
+
+            return referenceValue;
+        }
+
+
+
+
+        public static ConsoleColor ConsoleOutputColour(string variableType)
+        {
+            ConsoleColor consoleColor = new ConsoleColor();
+
+
+            switch (variableType)
+            {
+                case "Container":
+                    {
+                        consoleColor = ConsoleColor.Blue; break;
+                    }
+                case "Element":
+                    {
+                        consoleColor = ConsoleColor.Green; break;
+                    }
+                default:
+                    {
+                        consoleColor = ConsoleColor.Red; break;
+                    }
+            }
+
+            return consoleColor;
+        }
+
+        public static void WriteToConsole(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
+        {
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   ID: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(Id.PadRight(2));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   PARENT: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(parent.PadRight(2));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   LEVEL: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(level.PadRight(2));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(" OBJECT: ");
+
+            Console.ForegroundColor = colour;
+            int padLevel = (Int32.Parse(level) * 2);
+            string paddedPrefix = string.Empty.PadLeft(padLevel);
+            string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
+
+            Console.Write(paddedKey);
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   VALUE: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(value.PadRight(60));
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write("   META-ID: ");
+
+            Console.ForegroundColor = colour;
+            Console.Write(metaId.PadRight(30));
+
+
+
+
+
+            Console.WriteLine();
+        }
+
+
 
         public static void PrintUniqueFileExtensions()
         {
@@ -211,16 +437,53 @@
             Console.WriteLine($"Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
         }
 
+        //public static void PrintFields(MetaData metaData)
+        //{
+        //    Console.WriteLine($"Data Fields:");
+
+        //    foreach (var field in metaData.Fields)
+        //    {
+        //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
+        //    }
+        //}
+
         public static void PrintFields(MetaData metaData)
         {
-            Console.WriteLine($"Data Fields:");
+            ConsoleColor variableColour = DataHelper.ConsoleOutputColour(metaData.Type);
 
-            foreach (var field in metaData.Fields)
-            {
-                Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
-            }
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"Type: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.Type.PadRight(12)}");
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"ID: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.ID.ToString().PadRight(16)}");
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"Data Fields: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.Fields.First().Key.PadRight(50)}");
+
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"REFERENCE: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.WriteLine($" {metaData.RefVal.ToString().PadRight(20)}");
+
+
         }
-
 
     }
 }
