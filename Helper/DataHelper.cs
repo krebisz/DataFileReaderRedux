@@ -282,6 +282,7 @@ namespace DataFileReader.Helper
                 name = "Root";
                 HierarchyObject hierarchyObject = new HierarchyObject(id, name, formattedData, level, parentId);
                 //hierarchyObject.Value = GenerateValue(hierarchyObject.Value);
+                hierarchyObject.ClassID = "Container";
 
                 hierarchyObject.Value = GenerateValue(hierarchyObject);
 
@@ -324,6 +325,7 @@ namespace DataFileReader.Helper
 
                                 IdMax = IdMax + 1;
                                 HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, value, sublevel, parentId));
+                                hierarchyObject.ClassID = "Container";
                                 ObjectHierarchylist.Add(hierarchyObject);
 
                                 WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
@@ -350,6 +352,7 @@ namespace DataFileReader.Helper
 
                                     IdMax = IdMax + 1;
                                     HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, string.Empty, sublevel, parentId));
+                                    hierarchyObject.ClassID = "Element";
                                     ObjectHierarchylist.Add(hierarchyObject);
 
                                     WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Green);
@@ -363,6 +366,8 @@ namespace DataFileReader.Helper
 
                                     IdMax = IdMax + 1;
                                     HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, value, sublevel, parentId));
+                                    hierarchyObject.ClassID = "Container";
+
                                     ObjectHierarchylist.Add(hierarchyObject);
 
                                     WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
@@ -379,6 +384,7 @@ namespace DataFileReader.Helper
 
                                     IdMax = IdMax + 1;
                                     HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, subObject.Value.ToString(), sublevel, parentId));
+                                    hierarchyObject.ClassID = "Element";
                                     ObjectHierarchylist.Add(hierarchyObject);
 
                                     WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Green);
@@ -392,6 +398,8 @@ namespace DataFileReader.Helper
                                         string value = GenerateValue(subObject.Key, subObject.Value.ToString());
 
                                         HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, value, sublevel, parentId));
+                                        hierarchyObject.ClassID = "Container";
+
                                         ObjectHierarchylist.Add(hierarchyObject);
 
                                         WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);
@@ -412,6 +420,8 @@ namespace DataFileReader.Helper
 
                                             IdMax = IdMax + 1;
                                             HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, value, sublevel, parentId));
+                                            hierarchyObject.ClassID = "Container";
+
                                             ObjectHierarchylist.Add(hierarchyObject);
 
                                             WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), ConsoleColor.Blue);

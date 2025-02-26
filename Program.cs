@@ -149,37 +149,7 @@
 
                 List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", fileData, 0, null);
 
-                MetaData metaData = new MetaData();
-
-                foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
-                {
-                    System.Type type = hierarchyObject.Value.GetType();
-
-                    if (String.IsNullOrEmpty(hierarchyObject.Name))
-                    {
-                        hierarchyObject.Name = Guid.NewGuid().ToString();
-                    }
-
-                    if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
-                    {
-                        metaData.Fields.Add(hierarchyObject.Name, type);
-                    }
-                    else
-                    {
-                        //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-                    }
-                }
-
-                metaData.GenerateID();
-
-                MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-                if (existingMetaData is null)
-                {
-                    MetaDataList.Add(metaData);
-                    //SQLHelper.CreateSQLTable(metaData);
-                }
-
+                CreateMetaData(HierarchyObjectList);
             }
             catch (Exception ex)
             {
@@ -190,6 +160,87 @@
         public static void ProceessFile_TCX(string fileName, string fileData)
         {
         }
+
+
+
+        public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
+        {
+            MetaData metaData = new MetaData();
+
+            foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
+            {
+                System.Type type = hierarchyObject.Value.GetType();
+
+                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                {
+                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                }
+
+                if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
+                {
+                    metaData.Fields.Add(hierarchyObject.Name, type);
+                }
+                else
+                {
+                    //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
+                }
+            }
+
+            metaData.GenerateID();
+
+            MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+
+            if (existingMetaData is null)
+            {
+                MetaDataList.Add(metaData);
+            }
+        }
+
+
+
+
+
+        public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
+        {
+            foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
+            {
+                MetaData metaData = new MetaData();
+
+                System.Type type = hierarchyObject.Value.GetType();
+
+                if (String.IsNullOrEmpty(hierarchyObject.Name))
+                {
+                    hierarchyObject.Name = Guid.NewGuid().ToString();
+                }
+
+                metaData.Fields.Add(hierarchyObject.Value, type);
+                metaData.GenerateID();
+
+                metaData.Name = hierarchyObject.Name;
+                metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+                metaData.Type = hierarchyObject.ClassID;
+
+                hierarchyObject.MetaDataID = metaData.RefVal;
+
+                MetaDataList.Add(metaData);
+            }
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            Console.WriteLine("METADATA:");
+
+            foreach (MetaData metaData in MetaDataList)
+            {
+                PrintFields(metaData);
+            }
+        }
+
+
+
+
+
+
+
 
         public static void PrintUniqueFileExtensions()
         {
@@ -211,16 +262,62 @@
             Console.WriteLine($"Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
         }
 
+        //public static void PrintFields(MetaData metaData)
+        //{
+        //    Console.WriteLine($"Data Fields:");
+
+        //    foreach (var field in metaData.Fields)
+        //    {
+        //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
+        //    }
+        //}
+
         public static void PrintFields(MetaData metaData)
         {
-            Console.WriteLine($"Data Fields:");
+            ConsoleColor variableColour = new ConsoleColor();
 
-            foreach (var field in metaData.Fields)
+            if (metaData.Type == "Container")
             {
-                Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
+                variableColour = ConsoleColor.Blue;
             }
-        }
+            else
+            {
+                variableColour = ConsoleColor.Green;
+            }
 
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"Type: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.Type.PadRight(12)}");
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"ID: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.ID.ToString().PadRight(16)}");
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"Data Fields: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.Write($" {metaData.Fields.First().Key.PadRight(50)}");
+
+
+
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"REFERENCE: ");
+
+            Console.ForegroundColor = variableColour;
+            Console.WriteLine($" {metaData.RefVal.ToString().PadRight(20)}");
+
+
+        }
 
     }
 }

@@ -10,7 +10,6 @@ namespace DataFileReader.Class
 
         public int? ParentID { get; set; }
 
-
         public string Name { get; set; }
 
         public string Value { get; set; }
@@ -20,6 +19,8 @@ namespace DataFileReader.Class
         public KeyValuePair<string, JsonNode?> Element { get; set; }
 
         public Dictionary<string, string> Field { get; set; }
+
+        public string MetaDataID { get; set; }
 
         public string ClassID { get; set; }
 
