@@ -1,5 +1,6 @@
 ﻿using DataFileReader.Class;
 using System.Collections;
+using System.Configuration;
 using System.Data.SqlClient;
 
 namespace DataFileReader.Helper
@@ -8,7 +9,7 @@ namespace DataFileReader.Helper
     {
         public static void CreateSQLTable(MetaData metaData)
         {
-            SqlConnection sqlConnection = new SqlConnection("Data Source=(local);Initial Catalog=Health;Integrated Security=SSPI");
+            SqlConnection sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
             SqlCommand sqlCommand = sqlConnection.CreateCommand();
 
             string sqlQuery = string.Empty;
@@ -58,7 +59,7 @@ namespace DataFileReader.Helper
 
         public static void UpdateSQLTable(MetaData metaData, string fileContent)
         {
-            SqlConnection sqlConnection = new SqlConnection("Data Source=(local);Initial Catalog=Health;Integrated Security=SSPI");
+            SqlConnection sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
             SqlCommand sqlCommand = sqlConnection.CreateCommand();
 
             string sqlQuery = string.Empty;
@@ -128,7 +129,7 @@ namespace DataFileReader.Helper
 
         public static void DeleteSQLTable(string tableName)
         {
-            SqlConnection sqlConnection = new SqlConnection("Data Source=(local);Initial Catalog=Health;Integrated Security=SSPI");
+            SqlConnection sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
             SqlCommand sqlCommand = sqlConnection.CreateCommand();
 
             string sqlQuery = string.Empty;

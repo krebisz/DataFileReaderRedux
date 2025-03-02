@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DataFileReader.Class
+﻿namespace DataFileReader.Class
 {
     public class StandardJSON
     {
-        string json = string.Empty;
+        private string json = string.Empty;
 
-        public StandardJSON() { }
+        public StandardJSON()
+        { }
 
         public StandardJSON(string jsonInput)
         {
@@ -39,8 +34,8 @@ namespace DataFileReader.Class
             //-------------------------------------------------//-------------------------------------------------
             //1ST ORDER:
             //-------------------------------------------------//-------------------------------------------------
-            // {}  - Handle as: 
-            // []  - Handle as: 
+            // {}  - Handle as:
+            // []  - Handle as:
             // {*} - Handle as, then handover to:
             // [*] - Handle as, then handover to:
             //
@@ -53,7 +48,6 @@ namespace DataFileReader.Class
             //{[]}
             //[{}]
             //[[]]
-
 
             return formattedJSON;
         }

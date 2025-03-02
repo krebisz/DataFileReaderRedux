@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Nodes;
-using System.Xml.Linq;
+﻿using System.Text.Json.Nodes;
 
 namespace DataFileReader.Class
 {
@@ -22,16 +20,7 @@ namespace DataFileReader.Class
 
         public int? MetaDataID { get; set; }
 
-        public string MetaDataID { get; set; }
-
         public string ClassID { get; set; }
-
-
-
-
-
-
-
 
         public HierarchyObject()
         {
@@ -108,10 +97,8 @@ namespace DataFileReader.Class
             }
         }
 
-
         public void GenerateClassID()
         {
-
         }
 
         public void GenerateID(KeyValuePair<string, JsonNode?> element)
@@ -120,7 +107,5 @@ namespace DataFileReader.Class
             //Field = Field.Add(element(x => x.Key, x => x.Value);
             //ID = Fields.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
         }
-
-
     }
 }

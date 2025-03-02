@@ -2,22 +2,23 @@
 {
     using DataFileReader.Class;
     using DataFileReader.Helper;
-    using Newtonsoft.Json.Linq;
     using System;
+    using System.Configuration;
     using System.IO;
     using System.Linq;
-    using System.Text.Json;
 
     internal class Program
     {
         //public static string topDirectory = @"C:\Documents\Personal\Health Data\";
-        public static string topDirectory = @"C:\Documents\Temp\csv\";
+        public static string topDirectory; // = @"C:\Documents\Temp\csv\";
 
         public static List<string> FileList = new List<string>();
         public static List<MetaData> MetaDataList = new List<MetaData>();
 
         private static void Main(string[] args)
         {
+            topDirectory = ConfigurationManager.AppSettings["RootDirectory"];
+
             FileList = FileHelper.GetFileList(topDirectory);
 
             try
@@ -37,8 +38,8 @@
 
         public static void ProcessFileData(string file)
         {
-            string fileName = DataHelper.GetFileName(file);
-            string fileExtension = DataHelper.GetFileExtension(file);
+            string fileName = FileHelper.GetFileName(file);
+            string fileExtension = FileHelper.GetFileExtension(file);
             string fileContent = File.ReadAllText(file);
 
             if (fileExtension == "csv")
@@ -140,7 +141,6 @@
             fileData = DataHelper.RemoveEscapeCharacters(fileData);
             fileData = DataHelper.RemoveFaultyCharacterSequences(fileData);
 
-
             object dynamicObject = new object();
 
             try
@@ -160,7 +160,6 @@
         public static void ProceessFile_TCX(string fileName, string fileData)
         {
         }
-
 
         public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
         {
@@ -195,15 +194,10 @@
             }
         }
 
-
-
-
-
         //public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
         //{
         //    foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
         //    {
-
         //        MetaData metaData = new MetaData();
 
         //        System.Type type = hierarchyObject.Value.GetType();
@@ -222,11 +216,7 @@
         //        metaData.Type = hierarchyObject.ClassID;
         //        metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
 
-
-
         //        var parentHierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObject.ParentID);
-
-
 
         //        metaData.GenerateID();
 
@@ -235,7 +225,6 @@
         //        metaData.Type = hierarchyObject.ClassID;
 
         //        hierarchyObject.MetaDataID = metaData.RefVal;
-
 
         //        MetaDataList.Add(metaData);
         //    }
@@ -250,15 +239,13 @@
         //    }
         //}
 
-
-
         public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
         {
             DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
 
             foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
             {
-                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
+                ConsoleHelper.WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
 
                 MetaData metaData = new MetaData();
 
@@ -271,18 +258,14 @@
 
                 metaData.Fields.Add(hierarchyObject.Value, type);
 
-
                 //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
                 metaData.GenerateID();
 
                 metaData.Name = hierarchyObject.Name;
                 metaData.Type = hierarchyObject.ClassID;
                 //metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
-                int? referenceValue = null;             
+                int? referenceValue = null;
                 metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList, hierarchyObject.ID, ref referenceValue).ToString();
-
-
-
 
                 MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.RefVal == metaData.RefVal);
 
@@ -298,26 +281,18 @@
 
             foreach (MetaData metaData in MetaDataList)
             {
-                PrintFields(metaData);
+                ConsoleHelper.PrintFields(metaData);
             }
         }
 
-
-
-
-
-
-
-
         public static int? GetMetaDataObjectReferenceValue(List<HierarchyObject> HierarchyObjectList, int hierarchyObjectID, ref int? referenceValue)
         {
-            if (referenceValue == null) 
+            if (referenceValue == null)
             {
                 referenceValue = 0;
             }
 
             HierarchyObject hierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObjectID);
-
 
             if (hierarchyObject != null)
             {
@@ -329,166 +304,7 @@
                 }
             }
 
-
             return referenceValue;
         }
-
-
-
-
-        public static ConsoleColor ConsoleOutputColour(string variableType)
-        {
-            ConsoleColor consoleColor = new ConsoleColor();
-
-
-            switch (variableType)
-            {
-                case "Container":
-                    {
-                        consoleColor = ConsoleColor.Blue; break;
-                    }
-                case "Element":
-                    {
-                        consoleColor = ConsoleColor.Green; break;
-                    }
-                default:
-                    {
-                        consoleColor = ConsoleColor.Red; break;
-                    }
-            }
-
-            return consoleColor;
-        }
-
-        public static void WriteToConsole(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   ID: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(Id.PadRight(2));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   PARENT: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(parent.PadRight(2));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   LEVEL: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(level.PadRight(2));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" OBJECT: ");
-
-            Console.ForegroundColor = colour;
-            int padLevel = (Int32.Parse(level) * 2);
-            string paddedPrefix = string.Empty.PadLeft(padLevel);
-            string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
-
-            Console.Write(paddedKey);
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   VALUE: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(value.PadRight(60));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   META-ID: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(metaId.PadRight(30));
-
-
-
-
-
-            Console.WriteLine();
-        }
-
-
-
-
-        public static void PrintUniqueFileExtensions()
-        {
-            List<string> fileExtensions = DataHelper.GetDistinctFileExtensions(FileList);
-
-            Console.WriteLine($"Unique File Extensions:");
-
-            foreach (string fileExtension in fileExtensions)
-            {
-                Console.WriteLine($"{fileExtension}");
-            }
-        }
-
-        public static void PrintDataSetInformation()
-        {
-            List<MetaData> distinctMetaDataList = MetaDataList.Distinct(new MetaDataComparer()).ToList();
-
-            Console.WriteLine($"Data Sets: " + MetaDataList.Count());
-            Console.WriteLine($"Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
-        }
-
-        //public static void PrintFields(MetaData metaData)
-        //{
-        //    Console.WriteLine($"Data Fields:");
-
-        //    foreach (var field in metaData.Fields)
-        //    {
-        //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
-        //    }
-        //}
-
-        public static void PrintFields(MetaData metaData)
-        {
-            ConsoleColor variableColour = DataHelper.ConsoleOutputColour(metaData.Type);
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"Type: ");
-
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.Type.PadRight(12)}");
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"ID: ");
-
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.ID.ToString().PadRight(16)}");
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"Data Fields: ");
-
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.Fields.First().Key.PadRight(50)}");
-
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"REFERENCE: ");
-
-            Console.ForegroundColor = variableColour;
-            Console.WriteLine($" {metaData.RefVal.ToString().PadRight(20)}");
-
-
-        }
-
-        }
     }
+}

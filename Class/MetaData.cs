@@ -12,8 +12,6 @@
 
         public string Type { get; set; }
 
-
-
         public Dictionary<string, Type> Fields { get; set; }
 
         public MetaData()

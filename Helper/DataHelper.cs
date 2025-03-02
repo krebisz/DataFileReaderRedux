@@ -1,11 +1,5 @@
 ﻿using DataFileReader.Class;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
-using System.Dynamic;
-using System.Linq;
-using System.Net;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -22,41 +16,6 @@ namespace DataFileReader.Helper
 
         #region File Operations
 
-        public static string GetFileExtension(string file)
-        {
-            string fileExtension = string.Empty;
-
-            string[] fileParts = file.Split('.');
-
-            int filePartsLength = fileParts.Length;
-
-            if (filePartsLength > 0)
-            {
-                fileExtension = fileParts[filePartsLength - 1].Trim().ToLower();
-            }
-
-            return fileExtension;
-        }
-
-        public static string GetFileName(string file)
-        {
-            string fileName = string.Empty;
-
-            char[] separator = { '/', '\\' };
-            string[] fileParts = file.Split(separator);
-
-            int filePartsLength = fileParts.Length;
-
-            if (filePartsLength > 0)
-            {
-                fileName = fileParts[filePartsLength - 1].Trim().ToLower();
-            }
-
-            fileName = RemoveSpecialCharacters(fileName);
-
-            return fileName;
-        }
-
         public static string GetHeaderLine(string fileData)
         {
             string headerLine = string.Empty;
@@ -70,32 +29,6 @@ namespace DataFileReader.Helper
             headerLine = headerLine.Replace("\n", string.Empty);
 
             return headerLine;
-        }
-
-        public static List<string> GetDistinctFileExtensions(List<string> fileList)
-        {
-            List<string> fileExtensions = new List<string>();
-
-            foreach (string file in fileList)
-            {
-                string fileExtension = string.Empty;
-
-                string[] fileParts = file.Split('.');
-
-                int filePartsLength = fileParts.Length;
-
-                if (filePartsLength > 0)
-                {
-                    fileExtension = fileParts[filePartsLength - 1].Trim().ToLower();
-                }
-
-                if (!fileExtensions.Contains(fileExtension))
-                {
-                    fileExtensions.Add(fileExtension);
-                }
-            }
-
-            return fileExtensions;
         }
 
         public static string GetDataSetName(string name)
@@ -120,7 +53,6 @@ namespace DataFileReader.Helper
 
             return dataSetName;
         }
-
 
         public static List<string> GetFieldList(JArray objectArray)
         {
@@ -182,8 +114,7 @@ namespace DataFileReader.Helper
             return fieldlist;
         }
 
-        #endregion
-
+        #endregion File Operations
 
         #region CharacterOperations
 
@@ -260,16 +191,7 @@ namespace DataFileReader.Helper
             return dictionary;
         }
 
-        #endregion
-
-
-
-
-
-
-
-
-
+        #endregion CharacterOperations
 
         public static List<HierarchyObject> GetObjectHierarchy(int id, string name, string objectData, int level, int? parentId)
         {
@@ -291,7 +213,7 @@ namespace DataFileReader.Helper
                 hierarchyObject.ClassID = output.Item2;
 
                 ObjectHierarchylist.Add(hierarchyObject);
-                WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, "", hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
+                ConsoleHelper.WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, "", hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
             }
             else
             {
@@ -311,7 +233,6 @@ namespace DataFileReader.Helper
             {
                 JsonNode? jDynamicObject = JsonNode.Parse(formattedData);
 
-
                 try
                 {
                     if (jDynamicObject != null)
@@ -325,7 +246,6 @@ namespace DataFileReader.Helper
                                 string subName = name + "[" + i + "]";
                                 //string value = GenerateValue(name, jDynamicObject.AsArray()[i].ToString());
                                 (string, string) output = GenerateValue(name, jDynamicObject.AsArray()[i].ToString());
-
 
                                 IdMax = IdMax + 1;
 
@@ -408,11 +328,9 @@ namespace DataFileReader.Helper
                                         //string value = GenerateValue(subObject.Key, subObject.Value.ToString());
                                         (string, string) output = GenerateValue(subObject.Key, subObject.Value.ToString());
 
-
                                         HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subObject.Key, output.Item1, sublevel, parentId));
                                         hierarchyObject.ClassID = output.Item2;
                                         //hierarchyObject.ClassID = "Container";
-
 
                                         ObjectHierarchylist.Add(hierarchyObject);
 
@@ -426,7 +344,6 @@ namespace DataFileReader.Helper
 
                                         for (int j = 0; j < subObject.Value.AsArray().Count; j++)
                                         {
-
                                             id = id + 1;
                                             string subName = subObject.Key + "[" + j + "]";
                                             (string, string) output = GenerateValue(subObject.Value.AsArray()[j].ToString());
@@ -437,7 +354,6 @@ namespace DataFileReader.Helper
                                             HierarchyObject hierarchyObject = (new HierarchyObject(IdMax, subName, output.Item1, sublevel, parentId));
                                             hierarchyObject.ClassID = output.Item2;
                                             //hierarchyObject.ClassID = "Container";
-
 
                                             ObjectHierarchylist.Add(hierarchyObject);
 
@@ -462,7 +378,6 @@ namespace DataFileReader.Helper
                 {
                     Console.WriteLine($"Error: {ex.Message}");
                 }
-
             }
             catch (Exception ex)
             {
@@ -472,14 +387,10 @@ namespace DataFileReader.Helper
             return ObjectHierarchylist;
         }
 
-
-
         public static void GenerateObjectHierarchyMetaID(ref List<HierarchyObject> hierarchyObjectList)
         {
             foreach (HierarchyObject hierarchyObject in hierarchyObjectList)
             {
-
-
                 System.Type type = hierarchyObject.Value.GetType();
 
                 if (String.IsNullOrEmpty(hierarchyObject.Name))
@@ -489,101 +400,76 @@ namespace DataFileReader.Helper
 
                 hierarchyObject.Fields.Add(hierarchyObject.Value, type);
                 hierarchyObject.GenerateMetaDataID();
-
             }
-
         }
 
+        //public static ConsoleColor ConsoleOutputColour(string variableType)
+        //{
+        //    ConsoleColor consoleColor = new ConsoleColor();
 
+        //    switch (variableType)
+        //    {
+        //        case "Container":
+        //            {
+        //                consoleColor = ConsoleColor.Blue; break;
+        //            }
+        //        case "Element":
+        //            {
+        //                consoleColor = ConsoleColor.Green; break;
+        //            }
+        //        default:
+        //            {
+        //                consoleColor = ConsoleColor.Red; break;
+        //            }
+        //    }
 
+        //    return consoleColor;
+        //}
 
-        public static ConsoleColor ConsoleOutputColour(string variableType)
-        {
-            ConsoleColor consoleColor = new ConsoleColor();
+        //public static void WriteToConsole(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
+        //{
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write("   ID: ");
 
+        //    Console.ForegroundColor = colour;
+        //    Console.Write(Id.PadRight(2));
 
-            switch (variableType)
-            {
-                case "Container":
-                    {
-                        consoleColor = ConsoleColor.Blue; break;
-                    }
-                case "Element":
-                    {
-                        consoleColor = ConsoleColor.Green; break;
-                    }
-                default:
-                    {
-                        consoleColor = ConsoleColor.Red; break;
-                    }
-            }
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write("   PARENT: ");
 
-            return consoleColor;
-        }
+        //    Console.ForegroundColor = colour;
+        //    Console.Write(parent.PadRight(2));
 
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write("   LEVEL: ");
 
+        //    Console.ForegroundColor = colour;
+        //    Console.Write(level.PadRight(2));
 
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write(" OBJECT: ");
 
-        public static void WriteToConsole(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   ID: ");
+        //    Console.ForegroundColor = colour;
+        //    int padLevel = (Int32.Parse(level) * 2);
+        //    string paddedPrefix = string.Empty.PadLeft(padLevel);
+        //    string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
 
-            Console.ForegroundColor = colour;
-            Console.Write(Id.PadRight(2));
+        //    Console.Write(paddedKey);
 
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write("   VALUE: ");
 
+        //    Console.ForegroundColor = colour;
+        //    Console.Write(value.PadRight(60));
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   PARENT: ");
+        //    Console.ForegroundColor = ConsoleColor.White;
+        //    Console.Write("   META-ID: ");
 
-            Console.ForegroundColor = colour;
-            Console.Write(parent.PadRight(2));
+        //    Console.ForegroundColor = colour;
+        //    Console.Write(metaId.PadRight(30));
 
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   LEVEL: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(level.PadRight(2));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" OBJECT: ");
-
-            Console.ForegroundColor = colour;
-            int padLevel = (Int32.Parse(level) * 2);
-            string paddedPrefix = string.Empty.PadLeft(padLevel);
-            string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
-
-            Console.Write(paddedKey);
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   VALUE: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(value.PadRight(60));
-
-
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   META-ID: ");
-
-            Console.ForegroundColor = colour;
-            Console.Write(metaId.PadRight(30));
-
-
-
-
-
-            Console.WriteLine();
-        }
-
-
+        //    Console.WriteLine();
+        //}
 
         public static (string, string) GenerateValue(string jsonObject)
         {
@@ -593,7 +479,6 @@ namespace DataFileReader.Helper
             try
             {
                 var parsedValue = JsonNode.Parse(jsonObject);
-
 
                 if (parsedValue.GetType() == typeof(JsonArray))
                 {
@@ -623,7 +508,6 @@ namespace DataFileReader.Helper
                             if (parsedObject.GetType().Name == "JsonValueOfElement")
                             {
                                 value = "[" + parsedObject.AsValue() + "]";
-
 
                                 //for (int j = 0; j < parsedObject.AsArray().Count; j++)
                                 //{
@@ -660,7 +544,6 @@ namespace DataFileReader.Helper
                 }
 
                 objectType = "Container";
-
             }
             catch (Exception ex)
             {
@@ -671,12 +554,6 @@ namespace DataFileReader.Helper
 
             return (value, objectType);
         }
-
-
-
-
-
-
 
         public static (string, string) GenerateValue(string parentName, string jsonObject)
         {
@@ -729,18 +606,6 @@ namespace DataFileReader.Helper
             return (value, objectType);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
         public static (string, string) GenerateValue(HierarchyObject hierarchyObject)
         {
             string value = string.Empty;
@@ -764,7 +629,6 @@ namespace DataFileReader.Helper
                         value = value + component + ", ";
                     }
                 }
-
 
                 if (parsedValue.GetType() == typeof(JsonObject))
                 {
@@ -794,12 +658,6 @@ namespace DataFileReader.Helper
             return (value, objectType);
         }
 
-
-
-
-
-
-
         public static string FormatJSONObject(string unformattedData)
         {
             string formattedData = RemoveEscapeCharacters(unformattedData);
@@ -821,7 +679,6 @@ namespace DataFileReader.Helper
                         {
                             FormatJSONObject(jDynamicObject.AsArray()[i].ToString());
                         }
-
                     }
                     if (jDynamicObject.GetType() == typeof(JsonObject))
                     {
@@ -834,13 +691,8 @@ namespace DataFileReader.Helper
 
                             FormatJSONObject(subObjectString);
                         }
-
-
                     }
-
-
                 }
-
             }
             catch (Exception ex)
             {
@@ -849,31 +701,6 @@ namespace DataFileReader.Helper
 
             return formattedData;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         //public static string FormatJSONObject(string unformattedData)
         //{
@@ -900,7 +727,7 @@ namespace DataFileReader.Helper
         //            {
         //                //object k = (jDynamicObject as JsonObject).Deserialize<List<Item>>();
 
-        //                for (int i = 0; i < jDynamicObject.AsObject().Count; i++) 
+        //                for (int i = 0; i < jDynamicObject.AsObject().Count; i++)
         //                {
         //                    KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
         //                    string subObjectString = JsonSerializer.Serialize(subObject);
@@ -908,10 +735,8 @@ namespace DataFileReader.Helper
         //                    FormatJSONObject(subObjectString);
         //                }
 
-
         //                Console.WriteLine($"Object is JsonObject: {jDynamicObject}");
         //            }
-
 
         //        }
 
@@ -923,12 +748,5 @@ namespace DataFileReader.Helper
 
         //    return formattedData;
         //}
-
-
-
-
-
-
-
     }
 }
