@@ -7,6 +7,8 @@
 
         public Item()
         {
+            Name = String.Empty;
+            Value = String.Empty;
         }
 
         public Item(string name, string value)

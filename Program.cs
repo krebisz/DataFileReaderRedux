@@ -10,16 +10,16 @@
     internal class Program
     {
         //public static string topDirectory = @"C:\Documents\Personal\Health Data\";
-        public static string topDirectory; // = @"C:\Documents\Temp\csv\";
+        public static string TopDirectory; // = @"C:\Documents\Temp\csv\";
 
         public static List<string> FileList = new List<string>();
         public static List<MetaData> MetaDataList = new List<MetaData>();
 
         private static void Main(string[] args)
         {
-            topDirectory = ConfigurationManager.AppSettings["RootDirectory"];
+            TopDirectory = ConfigurationManager.AppSettings["RootDirectory"];
 
-            FileList = FileHelper.GetFileList(topDirectory);
+            FileList = FileHelper.GetFileList(TopDirectory);
 
             try
             {
@@ -60,6 +60,8 @@
             }
         }
 
+
+
         public static void ProcessFile_CSV(string fileName, string fileData)
         {
             string headerLine = DataHelper.GetHeaderLine(fileData);
@@ -81,61 +83,6 @@
             SQLHelper.UpdateSQLTable(metaData, fileContent);
         }
 
-        //public static void ProceessFile_JSON(string fileName, string fileData)
-        //{
-        //    object dynamicObject = new object();
-
-        //    fileData = fileData.Trim().Replace(" ", "");
-        //    fileData = fileData.Trim().Replace("\r", "");
-        //    fileData = fileData.Trim().Replace("\n", "");
-        //    fileData = fileData.Trim().Replace("\t", "");
-
-        //    dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
-
-        //    JArray objectArray = JArray.Parse(dynamicObject.ToString());
-        //    //FormatJSON(dynamicObject.ToString(), 0);
-        //    //var objectDictionary = ConvertToDictionary(dynamicObject);
-
-        //    List<string> list = new List<string>();
-        //    //list = DataHelper.GetFieldList(objectArray);
-
-        //    List<HierarchyObject> HierarchyObject = new List<HierarchyObject>();
-        //    HierarchyObject = DataHelper.GetObjectHierarchy(objectArray, null);
-
-        //    MetaData metaData = new MetaData();
-
-        //    //metaData.Fields = ConvertToDictionary(HierarchyObject);
-        //    foreach (HierarchyObject hierarchyObject in HierarchyObject)
-        //    {
-        //        System.Type type = hierarchyObject.Value.GetType();
-
-        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
-        //        {
-        //            hierarchyObject.Name = Guid.NewGuid().ToString();
-        //        }
-
-        //        if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
-        //        {
-        //            metaData.Fields.Add(hierarchyObject.Name, type);
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-        //        }
-
-        //    }
-
-        //    metaData.GenerateID();
-
-        //    MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-        //    if (existingMetaData is null)
-        //    {
-        //        MetaDataList.Add(metaData);
-        //        SQLHelper.CreateSQLTable(metaData);
-        //    }
-        //}
-
         public static void ProceessFile_JSON(string fileName, string fileData)
         {
             fileData = DataHelper.RemoveEscapeCharacters(fileData);
@@ -148,6 +95,7 @@
                 //dynamicObject = JsonSerializer.Deserialize<dynamic>(fileData);
 
                 List<HierarchyObject> HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", fileData, 0, null);
+                
 
                 CreateMetaData(HierarchyObjectList);
             }
@@ -161,83 +109,9 @@
         {
         }
 
-        public static void CreateMetaDataOld(List<HierarchyObject> HierarchyObjectList)
-        {
-            MetaData metaData = new MetaData();
 
-            foreach (HierarchyObject hierarchyObject in HierarchyObjectList)
-            {
-                System.Type type = hierarchyObject.Value.GetType();
 
-                if (String.IsNullOrEmpty(hierarchyObject.Name))
-                {
-                    hierarchyObject.Name = Guid.NewGuid().ToString();
-                }
 
-                if (!metaData.Fields.ContainsKey(hierarchyObject.Name))
-                {
-                    metaData.Fields.Add(hierarchyObject.Name, type);
-                }
-                else
-                {
-                    //Console.WriteLine($"ERROR: {hierarchyObject.Name}, of Type: {type.ToString()}, and Value: {hierarchyObject.Value.ToString()} already Adeded.");
-                }
-            }
-
-            metaData.GenerateID();
-
-            MetaData existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
-
-            if (existingMetaData is null)
-            {
-                MetaDataList.Add(metaData);
-            }
-        }
-
-        //public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
-        //{
-        //    foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
-        //    {
-        //        MetaData metaData = new MetaData();
-
-        //        System.Type type = hierarchyObject.Value.GetType();
-
-        //        if (String.IsNullOrEmpty(hierarchyObject.Name))
-        //        {
-        //            hierarchyObject.Name = Guid.NewGuid().ToString();
-        //        }
-
-        //        metaData.Fields.Add(hierarchyObject.Value, type);
-
-        //        //THIS CAN EITHER BE GENERATED AS BELOW, OR ASSIGNED FROM: hierarchyObject.MetaDataID;
-        //        metaData.GenerateID();
-
-        //        metaData.Name = hierarchyObject.Name;
-        //        metaData.Type = hierarchyObject.ClassID;
-        //        metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
-
-        //        var parentHierarchyObject = HierarchyObjectList.FirstOrDefault(x => x.ID == hierarchyObject.ParentID);
-
-        //        metaData.GenerateID();
-
-        //        metaData.Name = hierarchyObject.Name;
-        //        metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
-        //        metaData.Type = hierarchyObject.ClassID;
-
-        //        hierarchyObject.MetaDataID = metaData.RefVal;
-
-        //        MetaDataList.Add(metaData);
-        //    }
-
-        //    Console.ForegroundColor = ConsoleColor.White;
-        //    Console.WriteLine();
-        //    Console.WriteLine("METADATA:");
-
-        //    foreach (MetaData metaData in MetaDataList)
-        //    {
-        //        PrintFields(metaData);
-        //    }
-        //}
 
         public static void CreateMetaData(List<HierarchyObject> HierarchyObjectList)
         {
@@ -245,7 +119,7 @@
 
             foreach (HierarchyObject hierarchyObject in HierarchyObjectList) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
             {
-                ConsoleHelper.WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
+                ConsoleHelper.PrintFields(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
 
                 MetaData metaData = new MetaData();
 
@@ -281,7 +155,7 @@
 
             foreach (MetaData metaData in MetaDataList)
             {
-                ConsoleHelper.PrintFields(metaData);
+                ConsoleHelper.PrintMetaData(metaData);
             }
         }
 

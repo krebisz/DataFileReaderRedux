@@ -1,9 +1,4 @@
 ﻿using DataFileReader.Class;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataFileReader.Helper
 {
@@ -32,7 +27,7 @@ namespace DataFileReader.Helper
             return consoleColor;
         }
 
-        public static void WriteToConsole(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
+        public static void PrintFields(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
         {
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write("   ID: ");
@@ -93,7 +88,7 @@ namespace DataFileReader.Helper
         {
             List<MetaData> distinctMetaDataList = MetaDataList.Distinct(new MetaDataComparer()).ToList();
 
-            Console.WriteLine($"Data Sets: " + MetaDataList.Count());
+            Console.WriteLine($"Data Sets: " + MetaDataList.Count);
             Console.WriteLine($"Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
         }
 
@@ -107,7 +102,7 @@ namespace DataFileReader.Helper
         //    }
         //}
 
-        public static void PrintFields(MetaData metaData)
+        public static void PrintMetaData(MetaData metaData)
         {
             ConsoleColor variableColour = ConsoleOutputColour(metaData.Type);
 
