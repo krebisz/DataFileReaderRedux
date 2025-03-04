@@ -37,16 +37,7 @@
             Name = name;
             Fields = new Dictionary<string, Type>();
 
-            string[] fieldNames = headerLine.Split(',');
-
-            foreach (string fieldName in fieldNames)
-            {
-                if (!string.IsNullOrWhiteSpace(fieldName))
-                {
-                    Fields[fieldName.Replace(" ", string.Empty).Trim()] = typeof(string); // Default to type string
-                }
-            }
-
+            GetFields(headerLine, ',');
             GenerateID();
         }
 
@@ -57,16 +48,7 @@
             Name = name;
             Fields = new Dictionary<string, Type>();
 
-            string[] fieldNames = headerLine.Split(',');
-
-            foreach (string fieldName in fieldNames)
-            {
-                if (!string.IsNullOrWhiteSpace(fieldName))
-                {
-                    Fields[fieldName.Replace(" ", string.Empty).Trim()] = typeof(string); // Default to type string
-                }
-            }
-
+            GetFields(headerLine, ',');
             GenerateID();
         }
 
@@ -76,6 +58,17 @@
             Name = name;
             Fields = new Dictionary<string, Type>();
 
+            GetFields(headerLine, delimiter);
+            GenerateID();
+        }
+
+        public void GenerateID()
+        {
+            ID = Fields.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
+        }
+
+        public void GetFields(string headerLine, char delimiter)
+        {
             string[] fieldNames = headerLine.Split(delimiter);
 
             foreach (string fieldName in fieldNames)
@@ -85,13 +78,6 @@
                     Fields[fieldName.Replace(" ", string.Empty).Trim()] = typeof(string); // Default to type string
                 }
             }
-
-            GenerateID();
-        }
-
-        public void GenerateID()
-        {
-            ID = Fields.OrderBy(field => field.Key).Aggregate(0, (hash, field) => HashCode.Combine(hash, field.Key.GetHashCode(), field.Value.GetHashCode()));
         }
 
         public void UpdateFieldType(string fieldName, Type fieldType)

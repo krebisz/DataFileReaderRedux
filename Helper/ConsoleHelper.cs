@@ -1,134 +1,133 @@
 ﻿using DataFileReader.Class;
 
-namespace DataFileReader.Helper
+namespace DataFileReader.Helper;
+
+public static class ConsoleHelper
 {
-    public static class ConsoleHelper
+    public static ConsoleColor ConsoleOutputColour(string variableType)
     {
-        public static ConsoleColor ConsoleOutputColour(string variableType)
+        var consoleColor = new ConsoleColor();
+
+        switch (variableType)
         {
-            ConsoleColor consoleColor = new ConsoleColor();
-
-            switch (variableType)
-            {
-                case "Container":
-                    {
-                        consoleColor = ConsoleColor.Blue; break;
-                    }
-                case "Element":
-                    {
-                        consoleColor = ConsoleColor.Green; break;
-                    }
-                default:
-                    {
-                        consoleColor = ConsoleColor.Red; break;
-                    }
-            }
-
-            return consoleColor;
+            case "Container":
+                {
+                    consoleColor = ConsoleColor.Blue;
+                    break;
+                }
+            case "Element":
+                {
+                    consoleColor = ConsoleColor.Green;
+                    break;
+                }
+            default:
+                {
+                    consoleColor = ConsoleColor.Red;
+                    break;
+                }
         }
 
-        public static void PrintFields(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   ID: ");
+        return consoleColor;
+    }
 
-            Console.ForegroundColor = colour;
-            Console.Write(Id.PadRight(2));
+    public static void PrintFields(string key, string Id, string level, string value, string parent, string metaId, ConsoleColor colour)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   ID: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   PARENT: ");
+        Console.ForegroundColor = colour;
+        Console.Write(Id.PadRight(2));
 
-            Console.ForegroundColor = colour;
-            Console.Write(parent.PadRight(2));
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   PARENT: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   LEVEL: ");
+        Console.ForegroundColor = colour;
+        Console.Write(parent.PadRight(2));
 
-            Console.ForegroundColor = colour;
-            Console.Write(level.PadRight(2));
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   LEVEL: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(" OBJECT: ");
+        Console.ForegroundColor = colour;
+        Console.Write(level.PadRight(2));
 
-            Console.ForegroundColor = colour;
-            int padLevel = (Int32.Parse(level) * 2);
-            string paddedPrefix = string.Empty.PadLeft(padLevel);
-            string paddedKey = (paddedPrefix + "|" + key).PadRight(30);
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write(" OBJECT: ");
 
-            Console.Write(paddedKey);
+        Console.ForegroundColor = colour;
+        var padLevel = int.Parse(level) * 2;
+        var paddedPrefix = string.Empty.PadLeft(padLevel);
+        var paddedKey = (paddedPrefix + "|" + key).PadRight(30);
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   VALUE: ");
+        Console.Write(paddedKey);
 
-            Console.ForegroundColor = colour;
-            Console.Write(value.PadRight(60));
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   VALUE: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("   META-ID: ");
+        Console.ForegroundColor = colour;
+        Console.Write(value.PadRight(60));
 
-            Console.ForegroundColor = colour;
-            Console.Write(metaId.PadRight(30));
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   META-ID: ");
 
-            Console.WriteLine();
-        }
+        Console.ForegroundColor = colour;
+        Console.Write(metaId.PadRight(30));
 
-        public static void PrintUniqueFileExtensions(List<string> FileList)
-        {
-            List<string> fileExtensions = FileHelper.GetDistinctFileExtensions(FileList);
+        Console.WriteLine();
+    }
 
-            Console.WriteLine($"Unique File Extensions:");
+    public static void PrintUniqueFileExtensions(List<string> FileList)
+    {
+        List<string> fileExtensions = FileHelper.GetDistinctFileExtensions(FileList);
 
-            foreach (string fileExtension in fileExtensions)
-            {
-                Console.WriteLine($"{fileExtension}");
-            }
-        }
+        Console.WriteLine("Unique File Extensions:");
 
-        public static void PrintDataSetInformation(List<MetaData> MetaDataList)
-        {
-            List<MetaData> distinctMetaDataList = MetaDataList.Distinct(new MetaDataComparer()).ToList();
+        foreach (var fileExtension in fileExtensions) Console.WriteLine($"{fileExtension}");
+    }
 
-            Console.WriteLine($"Data Sets: " + MetaDataList.Count);
-            Console.WriteLine($"Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
-        }
+    public static void PrintDataSetInformation(List<MetaData> MetaDataList)
+    {
+        List<MetaData> distinctMetaDataList = MetaDataList.Distinct(new MetaDataComparer()).ToList();
 
-        //public static void PrintFields(MetaData metaData)
-        //{
-        //    Console.WriteLine($"Data Fields:");
+        Console.WriteLine("Data Sets: " + MetaDataList.Count);
+        Console.WriteLine("Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
+    }
 
-        //    foreach (var field in metaData.Fields)
-        //    {
-        //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
-        //    }
-        //}
+    //public static void PrintFields(MetaData metaData)
+    //{
+    //    Console.WriteLine($"Data Fields:");
 
-        public static void PrintMetaData(MetaData metaData)
-        {
-            ConsoleColor variableColour = ConsoleOutputColour(metaData.Type);
+    //    foreach (var field in metaData.Fields)
+    //    {
+    //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
+    //    }
+    //}
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"Type: ");
+    public static void PrintMetaData(MetaData metaData)
+    {
+        var variableColour = ConsoleOutputColour(metaData.Type);
 
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.Type.PadRight(12)}");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("Type: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"ID: ");
+        Console.ForegroundColor = variableColour;
+        Console.Write($" {metaData.Type.PadRight(12)}");
 
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.ID.ToString().PadRight(16)}");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("ID: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"Data Fields: ");
+        Console.ForegroundColor = variableColour;
+        Console.Write($" {metaData.ID.ToString().PadRight(16)}");
 
-            Console.ForegroundColor = variableColour;
-            Console.Write($" {metaData.Fields.First().Key.PadRight(50)}");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("Data Fields: ");
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"REFERENCE: ");
+        Console.ForegroundColor = variableColour;
+        Console.Write($" {metaData.Fields.First().Key.PadRight(50)}");
 
-            Console.ForegroundColor = variableColour;
-            Console.WriteLine($" {metaData.RefVal.ToString().PadRight(20)}");
-        }
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("REFERENCE: ");
+
+        Console.ForegroundColor = variableColour;
+        Console.WriteLine($" {metaData.RefVal.PadRight(20)}");
     }
 }
