@@ -1,16 +1,16 @@
 ﻿using DataFileReader.Class;
 using DataFileReader.Helper;
 using System.Configuration;
+using System.Data;
 
 namespace DataFileReader;
 
 internal class Program
 {
-    //public static string topDirectory = @"C:\Documents\Personal\Health Data\";
     public static string TopDirectory; // = @"C:\Documents\Temp\csv\";
 
     public static List<string> FileList = new();
-    public static List<MetaData> MetaDataList = new();
+    public static MetaDataList MetaDataList = new();
 
     private static void Main(string[] args)
     {
@@ -52,11 +52,11 @@ internal class Program
         //fileContent = fileContent.Replace("\n", string.Empty);
 
         var metaData = new MetaData(dataSetName, headerLine);
-        var existingMetaData = MetaDataList.FirstOrDefault(x => x.ID == metaData.ID);
+        var existingMetaData = MetaDataList.MetaDataObjects.FirstOrDefault(x => x.ID == metaData.ID);
 
         if (existingMetaData is null)
         {
-            MetaDataList.Add(metaData);
+            MetaDataList.MetaDataObjects.Add(metaData);
             SQLHelper.CreateSQLTable(metaData);
         }
 
@@ -114,16 +114,46 @@ internal class Program
             int? referenceValue = null;
             metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
 
-            var existingMetaData = MetaDataList.FirstOrDefault(x => x.RefVal == metaData.RefVal);
 
-            if (existingMetaData is null && metaData.Type != "Element") MetaDataList.Add(metaData);
+
+            if (metaData.Type != "Element")
+            {
+                var existingMetaData = MetaDataList.MetaDataObjects.FirstOrDefault(x => x.RefVal == metaData.RefVal);
+
+                //if (existingMetaData is null && metaData.Type != "Element") MetaDataList.MetaDataObjects.Add(metaData);
+                if (existingMetaData is null)
+                {
+                    MetaDataList.MetaDataObjects.Add(metaData);
+                }
+            }
+            else
+            {
+                var existingElement = MetaDataList.ElementsList.FirstOrDefault(x => x == metaData.Name);
+
+                if (existingElement is null)
+                {
+                    MetaDataList.ElementsList.Add(metaData.Name);
+                }
+            }
+
         }
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine();
         Console.WriteLine("METADATA:");
 
-        foreach (var metaData in MetaDataList) ConsoleHelper.PrintMetaData(metaData);
+        foreach (var metaData in MetaDataList.MetaDataObjects)
+        {
+            ConsoleHelper.PrintMetaData(metaData);
+        }
+
+        //Console.ForegroundColor = ConsoleColor.White;
+        //Console.WriteLine();
+        //Console.WriteLine("Data list (Elements):");
+        //ConsoleHelper.PrintMetaDataElements(MetaDataList.ElementsList);
+
+        DataTable flattenedData = MetaDataList.FlattenData(HierarchyObjectList);
+        ConsoleHelper.PrintFlattenedData(flattenedData);
     }
 
     public static int? GetMetaDataObjectReferenceValue(List<HierarchyObject> HierarchyObjectList, int hierarchyObjectID, ref int? referenceValue)

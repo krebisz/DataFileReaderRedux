@@ -128,7 +128,7 @@ public static class DataHelper
         return fieldList;
     }
 
-    public static HierarchyObjectList GetObjectHierarchy(int id, string name, string objectData, int level, int? parentId)
+    public static HierarchyObjectList GetObjectHierarchyOld(int id, string name, string objectData, int level, int? parentId)
     {
         try
         {
@@ -141,7 +141,7 @@ public static class DataHelper
                 string value = output.Item1;
                 string classID = "Container"; //hierarchyObject.ClassID = output.Item2;
 
-                HierarchyObject hierarchyObject = new HierarchyObject(id, name, value, level, parentId, classID); 
+                HierarchyObject hierarchyObject = new HierarchyObject(id, name, value, level, parentId, classID);
                 HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
             }
 
@@ -160,18 +160,17 @@ public static class DataHelper
                         {
                             (string, string) output = GenerateValue(jDynamicObject.AsArray()[i].ToString(), name);
 
-                            id = id + 1;
                             IdMax = IdMax + 1;
-                            int sublevel = level + 1;
+                            id = IdMax;
                             string subName = name + "[" + i + "]";
                             string value = output.Item1;
                             string classID = "Container"; //hierarchyObject.ClassID = output.Item2;
 
-                            HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                            HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
                             HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                             //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
-                            
-                            GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, jDynamicObject.AsArray()[i].ToString(), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+
+                            GetObjectHierarchyOld(hierarchyObject.ID, hierarchyObject.Name, jDynamicObject.AsArray()[i].ToString(), (int)hierarchyObject.Level, hierarchyObject.ParentID);
                         }
                     }
                     if (jDynamicObject.GetType() == typeof(JsonObject))
@@ -181,18 +180,17 @@ public static class DataHelper
                         for (var i = 0; i < jDynamicObject.AsObject().Count; i++)
                         {
                             KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
-                            var subObjectString = JsonSerializer.Serialize(subObject.Value);
+                            string subObjectString = JsonSerializer.Serialize(subObject.Value);
 
                             if (subObject.Value == null)
                             {
-                                id = id + 1;
                                 IdMax = IdMax + 1;
-                                int sublevel = level + 1;
+                                id = IdMax;
                                 string subName = subObject.Key;
                                 string value = string.Empty;
                                 string classID = "Element";
 
-                                HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                                HierarchyObject hierarchyObject = new HierarchyObject(id, subName, value, level + 1, parentId, classID);
                                 HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                                 //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
                             }
@@ -200,29 +198,27 @@ public static class DataHelper
                             {
                                 (string, string) output = GenerateValue(jDynamicObject.AsObject()[i].ToString());
 
-                                id = id + 1;
                                 IdMax = IdMax + 1;
-                                int sublevel = level + 1;
+                                id = IdMax;
                                 string subName = subObject.Key;
                                 string value = output.Item1;
                                 string classID = "Container"; //hierarchyObject.ClassID = output.Item2;
 
-                                HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                                HierarchyObject hierarchyObject = new HierarchyObject(id, subName, value, level + 1, parentId, classID);
                                 HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                                 //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
 
-                                GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, JsonSerializer.Serialize(subObject.Value), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+                                GetObjectHierarchyOld(hierarchyObject.ID, hierarchyObject.Name, JsonSerializer.Serialize(subObject.Value), (int)hierarchyObject.Level, hierarchyObject.ParentID);
                             }
                             else if (subObject.Value.GetType().Name == "JsonValueOfElement")
                             {
-                                id = id + 1;
                                 IdMax = IdMax + 1;
-                                int sublevel = level + 1;
+                                id = IdMax;
                                 string subName = subObject.Key;
                                 string value = subObject.Value.ToString();
                                 string classID = "Element";
 
-                                HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                                HierarchyObject hierarchyObject = new HierarchyObject(id, subName, value, level + 1, parentId, classID);
                                 HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                                 //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
                             }
@@ -232,14 +228,13 @@ public static class DataHelper
                                 {
                                     (string, string) output = GenerateValue(subObject.Value.ToString(), subObject.Key);
 
-                                    id = id + 1;
                                     IdMax = IdMax + 1;
-                                    int sublevel = level + 1;
+                                    id = IdMax;
                                     string subName = subObject.Key;
                                     string value = output.Item1;
                                     string classID = output.Item2; //hierarchyObject.ClassID = "Container";
 
-                                    HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                                    HierarchyObject hierarchyObject = new HierarchyObject(id, subName, value, level + 1, parentId, classID);
                                     HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                                     //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
                                 }
@@ -247,24 +242,23 @@ public static class DataHelper
                                 if (subObject.Value != null && subObject.Value.AsArray().Any())
                                 {
                                     parentId = IdMax;
-                                    int sublevel = level + 2;
 
                                     for (var j = 0; j < subObject.Value.AsArray().Count; j++)
                                     {
                                         (string, string) output = GenerateValue(subObject.Value.AsArray()[j].ToString());
 
-                                        id = id + 1;
                                         IdMax = IdMax + 1;
+                                        id = IdMax;
                                         //int sublevel = level + 1;
                                         string subName = subObject.Key + "[" + j + "]";
                                         string value = output.Item1;
                                         string classID = output.Item2; //hierarchyObject.ClassID = "Container";
 
-                                        HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, sublevel, parentId, classID);
+                                        HierarchyObject hierarchyObject = new HierarchyObject(id, subName, value, level + 2, parentId, classID);
                                         HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
                                         //WriteToConsole(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleOutputColour(hierarchyObject.ClassID));
 
-                                        GetObjectHierarchy(IdMax, subName, subObject.Value.AsArray()[j].ToString(), sublevel, parentId);
+                                        GetObjectHierarchyOld(id, subName, subObject.Value.AsArray()[j].ToString(), level + 2, parentId);
                                     }
                                 }
                             }
@@ -275,6 +269,157 @@ public static class DataHelper
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+
+        return HierarchyObjects;
+    }
+
+    public static HierarchyObjectList GetObjectHierarchy(int id, string name, string objectData, int level, int? parentId)
+    {
+        try
+        {
+            try
+            {
+                if (parentId == null)
+                {
+                    (string, string) output = GenerateValue(objectData, "Root");
+
+                    //level = 0;
+                    //name = "Root";
+                    string value = output.Item1;
+                    string classID = output.Item2; //hierarchyObject.ClassID = Container;
+
+                    HierarchyObject hierarchyObject = new HierarchyObject(id, name, value, level, parentId, classID); 
+                    HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+
+                    parentId = id;
+                    //IdMax = IdMax + 1;
+;
+
+                    GetObjectHierarchy(IdMax, hierarchyObject.Name, objectData, level + 1, parentId);
+                }
+                else
+                {
+
+                    JsonNode? jDynamicObject = JsonNode.Parse(objectData);
+
+                    if (jDynamicObject != null)
+                    {
+                        parentId = id;
+
+                        if (jDynamicObject.GetType() == typeof(JsonArray))
+                        {
+                            for (int i = 0; i < jDynamicObject.AsArray().Count; i++)
+                            {
+                                (string, string) output = GenerateValue(jDynamicObject.AsArray()[i].ToString(), name);
+
+                                IdMax = IdMax + 1;
+                                string subName = name + "[" + i + "]";
+                                string value = output.Item1;
+                                string classID = "Container"; //hierarchyObject.ClassID = output.Item2;
+
+                                HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
+                                HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+
+                                GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, jDynamicObject.AsArray()[i].ToString(), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+                            }
+                        }
+
+                        if (jDynamicObject.GetType() == typeof(JsonObject))
+                        {
+                            for (var i = 0; i < jDynamicObject.AsObject().Count; i++)
+                            {
+                                KeyValuePair<string, JsonNode?> subObject = jDynamicObject.AsObject().GetAt(i);
+
+                                if (subObject.Value == null)
+                                {
+                                    IdMax = IdMax + 1;
+                                    string subName = subObject.Key;
+                                    string value = string.Empty;
+                                    string classID = "Element";
+
+                                    HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
+                                    HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+                                }
+                                else if (subObject.Value.GetType() == typeof(JsonObject))
+                                {
+                                    (string, string) output = GenerateValue(jDynamicObject.AsObject()[i].ToString());
+
+                                    IdMax = IdMax + 1;
+                                    string subName = subObject.Key;
+                                    string value = output.Item1;
+                                    string classID = "Container"; //hierarchyObject.ClassID = output.Item2;
+
+                                    HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
+                                    HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+
+                                    GetObjectHierarchy(hierarchyObject.ID, hierarchyObject.Name, JsonSerializer.Serialize(subObject.Value), (int)hierarchyObject.Level, hierarchyObject.ParentID);
+                                }
+                                else if (subObject.Value.GetType().Name == "JsonValueOfElement")
+                                {
+                                    (string, string) output = GenerateValue(subObject.Value.ToString(), subObject.Key);
+
+                                    IdMax = IdMax + 1;
+                                    string subName = subObject.Key;
+                                    string value = subObject.Value.ToString();
+                                    string classID = output.Item2;  //"Element";
+
+                                    HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
+                                    HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+                                }
+                                else if (subObject.Value.GetType() == typeof(JsonArray))
+                                {
+                                    if (subObject.Key != null)
+                                    {
+                                        (string, string) output = GenerateValue(subObject.Value.ToString(), subObject.Key);
+
+                                        IdMax = IdMax + 1;
+                                        string subName = subObject.Key;
+                                        string value = output.Item1;
+                                        string classID = output.Item2; //hierarchyObject.ClassID = "Container";
+
+                                        HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 1, parentId, classID);
+                                        HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+                                    }
+
+                                    if (subObject.Value != null && subObject.Value.AsArray().Any())
+                                    {
+                                        parentId = IdMax;
+
+                                        for (var j = 0; j < subObject.Value.AsArray().Count; j++)
+                                        {
+                                            (string, string) output = GenerateValue(subObject.Value.AsArray()[j].ToString());
+
+                                            IdMax = IdMax + 1;
+                                            string subName = subObject.Key + "[" + j + "]";
+                                            string value = output.Item1;
+                                            string classID = output.Item2; //hierarchyObject.ClassID = "Container";
+
+                                            HierarchyObject hierarchyObject = new HierarchyObject(IdMax, subName, value, level + 2, parentId, classID);
+                                            HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
+
+                                            GetObjectHierarchy(IdMax, subName, subObject.Value.AsArray()[j].ToString(), level + 2, parentId);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("SubObject is Type Other");
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
             catch (Exception ex)
             {

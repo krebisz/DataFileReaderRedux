@@ -1,4 +1,5 @@
-﻿using DataFileReader.Class;
+﻿using System.Data;
+using DataFileReader.Class;
 
 namespace DataFileReader.Helper;
 
@@ -129,5 +130,51 @@ public static class ConsoleHelper
 
         Console.ForegroundColor = variableColour;
         Console.WriteLine($" {metaData.RefVal.PadRight(20)}");
+    }
+
+    public static void PrintMetaDataElements(List<string> elements)
+    {
+        var variableColour = ConsoleOutputColour("Element");
+        Console.ForegroundColor = variableColour;
+
+        foreach (string element in elements)
+        {
+            Console.Write(element + ",");
+        }
+
+        Console.WriteLine();
+    }
+
+    public static void PrintFlattenedData(DataTable flattenedData)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine();
+        Console.WriteLine("FLATTENED DATA:");
+
+        for (int i = 0; i < flattenedData.Columns.Count; i++)
+        {
+            Console.Write(flattenedData.Columns[i].ColumnName + ", ");
+        }
+
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        foreach (DataRow row in flattenedData.Rows)
+        {
+            Console.WriteLine(string.Join(", ", row.ItemArray));
+        }
+
+
+
+
+        //for (int i = 0; i < flattenedData.Rows.Count; i++)
+        //{
+        //    for (int j = 0; j < flattenedData.Columns.Count; j++)
+        //    {
+        //        Console.Write(flattenedData.Rows[i][j].ToString() + ", ");
+        //    }
+
+        //    Console.WriteLine();
+        //}
     }
 }

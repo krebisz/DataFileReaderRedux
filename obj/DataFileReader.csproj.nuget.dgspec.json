@@ -10,14 +10,14 @@
         "projectUniqueName": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
         "projectName": "DataFileReader",
         "projectPath": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
-        "packagesPath": "C:\\Users\\jrebisz\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\The Master\\.nuget\\packages\\",
         "outputPath": "C:\\Development\\POCs\\DataFileReader\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\jrebisz\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\The Master\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -55,9 +55,13 @@
               "target": "Package",
               "version": "[12.10.0, )"
             },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
             "OpenAI": {
               "target": "Package",
-              "version": "[2.2.0-beta.1, )"
+              "version": "[2.2.0-beta.2, )"
             },
             "RestClient": {
               "target": "Package",
@@ -66,6 +70,10 @@
             "RestSharp": {
               "target": "Package",
               "version": "[112.1.1-alpha.0.4, )"
+            },
+            "System.Configuration.ConfigurationManager": {
+              "target": "Package",
+              "version": "[10.0.0-preview.1.25080.5, )"
             },
             "System.Data.SqlClient": {
               "target": "Package",
