@@ -93,18 +93,12 @@ public static class ConsoleHelper
         Console.WriteLine("Distinct Data Sets: " + distinctMetaDataList.Distinct().Count());
     }
 
-    //public static void PrintFields(MetaData metaData)
-    //{
-    //    Console.WriteLine($"Data Fields:");
-
-    //    foreach (var field in metaData.Fields)
-    //    {
-    //        Console.WriteLine($"Field: {field.Key}, Type: {field.Value.Name}");
-    //    }
-    //}
-
     public static void PrintMetaData(MetaData metaData)
     {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine();
+        Console.WriteLine("METADATA:");
+
         var variableColour = ConsoleOutputColour(metaData.Type);
 
         Console.ForegroundColor = ConsoleColor.White;
@@ -163,18 +157,5 @@ public static class ConsoleHelper
         {
             Console.WriteLine(string.Join(", ", row.ItemArray));
         }
-
-
-
-
-        //for (int i = 0; i < flattenedData.Rows.Count; i++)
-        //{
-        //    for (int j = 0; j < flattenedData.Columns.Count; j++)
-        //    {
-        //        Console.Write(flattenedData.Rows[i][j].ToString() + ", ");
-        //    }
-
-        //    Console.WriteLine();
-        //}
     }
 }

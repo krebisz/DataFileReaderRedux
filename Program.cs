@@ -72,11 +72,11 @@ internal class Program
 
         try
         {
-            var formattedData = DataHelper.RemoveEscapeCharacters(fileData);
+            string formattedData = DataHelper.RemoveEscapeCharacters(fileData);
             formattedData = DataHelper.RemoveFaultyCharacterSequences(formattedData);
             HierarchyObjectList HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", formattedData, 0, null);
 
-            CreateMetaData(HierarchyObjectList);
+            GenerateMetaDataList(HierarchyObjectList);
         }
         catch (Exception ex)
         {
@@ -88,9 +88,21 @@ internal class Program
     {
     }
 
+    public static void GenerateMetaDataList(HierarchyObjectList HierarchyObjectList)
+    {
+        CreateMetaData(HierarchyObjectList);
+
+        foreach (var metaData in MetaDataList.MetaDataObjects)
+        {
+            ConsoleHelper.PrintMetaData(metaData);
+        }
+
+        DataTable flattenedData = MetaDataList.FlattenData(HierarchyObjectList);
+        ConsoleHelper.PrintFlattenedData(flattenedData);
+    }
+
     public static void CreateMetaData(HierarchyObjectList HierarchyObjectList)
     {
-        //DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
         HierarchyObjectList.GenerateMetaIDs();
 
         foreach (var hierarchyObject in HierarchyObjectList.HierarchyObjects) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
@@ -137,23 +149,6 @@ internal class Program
             }
 
         }
-
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine();
-        Console.WriteLine("METADATA:");
-
-        foreach (var metaData in MetaDataList.MetaDataObjects)
-        {
-            ConsoleHelper.PrintMetaData(metaData);
-        }
-
-        //Console.ForegroundColor = ConsoleColor.White;
-        //Console.WriteLine();
-        //Console.WriteLine("Data list (Elements):");
-        //ConsoleHelper.PrintMetaDataElements(MetaDataList.ElementsList);
-
-        DataTable flattenedData = MetaDataList.FlattenData(HierarchyObjectList);
-        ConsoleHelper.PrintFlattenedData(flattenedData);
     }
 
     public static int? GetMetaDataObjectReferenceValue(List<HierarchyObject> HierarchyObjectList, int hierarchyObjectID, ref int? referenceValue)
