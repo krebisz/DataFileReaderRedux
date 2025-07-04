@@ -1,9 +1,8 @@
-﻿using System.ComponentModel;
+﻿using DataFileReader.Class;
+using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using DataFileReader.Class;
-using Newtonsoft.Json.Linq;
 
 namespace DataFileReader.Helper;
 
@@ -11,7 +10,6 @@ public static class DataHelper
 {
     public static HierarchyObjectList HierarchyObjects = new();
     public static int IdMax;
-
 
     public static (string, string) GenerateValue(HierarchyObject hierarchyObject)
     {
@@ -146,7 +144,6 @@ public static class DataHelper
             }
 
             parentId = id;
-
 
             try
             {
@@ -298,18 +295,17 @@ public static class DataHelper
                     string value = output.Item1;
                     string classID = output.Item2; //hierarchyObject.ClassID = Container;
 
-                    HierarchyObject hierarchyObject = new HierarchyObject(id, name, value, level, parentId, classID); 
+                    HierarchyObject hierarchyObject = new HierarchyObject(id, name, value, level, parentId, classID);
                     HierarchyObjects.HierarchyObjects.Add(hierarchyObject);
 
                     parentId = id;
                     //IdMax = IdMax + 1;
-;
+                    ;
 
                     GetObjectHierarchy(IdMax, hierarchyObject.Name, objectData, level + 1, parentId);
                 }
                 else
                 {
-
                     JsonNode? jDynamicObject = JsonNode.Parse(objectData);
 
                     if (jDynamicObject != null)
@@ -419,7 +415,6 @@ public static class DataHelper
                         }
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -433,7 +428,6 @@ public static class DataHelper
 
         return HierarchyObjects;
     }
-
 
     #region File Operations
 
@@ -473,7 +467,6 @@ public static class DataHelper
     }
 
     #endregion File Operations
-
 
     #region CharacterOperations
 

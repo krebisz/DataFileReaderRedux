@@ -1,5 +1,5 @@
-﻿using System.Data;
-using DataFileReader.Class;
+﻿using DataFileReader.Class;
+using System.Data;
 
 namespace DataFileReader.Helper;
 
@@ -163,9 +163,6 @@ public static class ConsoleHelper
         {
             Console.WriteLine(string.Join(", ", row.ItemArray));
         }
-
-
-
 
         //for (int i = 0; i < flattenedData.Rows.Count; i++)
         //{

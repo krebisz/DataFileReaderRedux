@@ -114,8 +114,6 @@ internal class Program
             int? referenceValue = null;
             metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
 
-
-
             if (metaData.Type != "Element")
             {
                 var existingMetaData = MetaDataList.MetaDataObjects.FirstOrDefault(x => x.RefVal == metaData.RefVal);
@@ -135,7 +133,6 @@ internal class Program
                     MetaDataList.ElementsList.Add(metaData.Name);
                 }
             }
-
         }
 
         Console.ForegroundColor = ConsoleColor.White;

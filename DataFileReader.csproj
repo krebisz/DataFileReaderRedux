@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Data.Tables" Version="12.10.0" />
+    <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="OpenAI" Version="2.2.0-beta.2" />
+    <PackageReference Include="OpenAI" Version="2.2.0" />
     <PackageReference Include="RestClient" Version="3.1024.23771" />
     <PackageReference Include="RestSharp" Version="112.1.1-alpha.0.4" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0-preview.1.25080.5" />

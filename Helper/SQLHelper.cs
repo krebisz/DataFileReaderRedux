@@ -9,98 +9,94 @@ public static class SQLHelper
 {
     public static void CreateSQLTable(MetaData metaData)
     {
-        var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
-        var sqlCommand = sqlConnection.CreateCommand();
-
-        var sqlQuery = string.Empty;
-        var tableName = string.Empty;
-
-        if (!string.IsNullOrEmpty(metaData.Name))
-            tableName = metaData.Name;
-        else
-            tableName = "ID_" + metaData.ID;
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+        var tableName = metaData.Name ?? $"ID_{metaData.ID}";
 
         DeleteSQLTable(tableName);
 
-        sqlQuery = "CREATE TABLE [" + tableName + "](";
+        var createTableQuery = $"CREATE TABLE [{tableName}]({string.Join(", ", metaData.Fields.Keys.Select(field => $"[{field}] VARCHAR(MAX) NULL"))})";
 
-        try
+        using (var sqlConnection = new SqlConnection(connectionString))
         {
-            var metaDataArray = new ArrayList();
-
-            for (var i = 0; i < metaData.Fields.Count; i++)
-            {
-                metaDataArray.Add(metaData.Fields.ToArray()[i]);
-
-                if (i > 0) sqlQuery += ",";
-
-                sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "] VARCHAR(MAX) NULL";
-            }
-
-            sqlQuery += ")";
-
             sqlConnection.Open();
-            sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
-            sqlCommand.ExecuteNonQuery();
-            sqlConnection.Close();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
+            using (var sqlCommand = new SqlCommand(createTableQuery, sqlConnection))
+            {
+                sqlCommand.ExecuteNonQuery();
+            }
         }
     }
 
+    //public static void CreateSQLTable(MetaData metaData)
+    //{
+    //    var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
+    //    var sqlCommand = sqlConnection.CreateCommand();
+
+    //    var sqlQuery = string.Empty;
+    //    var tableName = string.Empty;
+
+    //    if (!string.IsNullOrEmpty(metaData.Name))
+    //        tableName = metaData.Name;
+    //    else
+    //        tableName = "ID_" + metaData.ID;
+
+    //    DeleteSQLTable(tableName);
+
+    //    sqlQuery = "CREATE TABLE [" + tableName + "](";
+
+    //    try
+    //    {
+    //        var metaDataArray = new ArrayList();
+
+    //        for (var i = 0; i < metaData.Fields.Count; i++)
+    //        {
+    //            metaDataArray.Add(metaData.Fields.ToArray()[i]);
+
+    //            if (i > 0) sqlQuery += ",";
+
+    //            sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "] VARCHAR(MAX) NULL";
+    //        }
+
+    //        sqlQuery += ")";
+
+    //        sqlConnection.Open();
+    //        sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
+    //        sqlCommand.ExecuteNonQuery();
+    //        sqlConnection.Close();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Error: {ex.Message}");
+    //    }
+    //}
+
     public static void UpdateSQLTable(MetaData metaData, string fileContent)
     {
-        var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
-        var sqlCommand = sqlConnection.CreateCommand();
-
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
         var sqlQuery = string.Empty;
 
         try
         {
-            string[] contentLines = fileContent.Split('\n');
+            var contentLines = fileContent.Split('\n');
+            var tableName = metaData.Name ?? $"ID_{Math.Abs(metaData.ID)}";
 
-            foreach (var contentLine in contentLines)
+            using (var sqlConnection = new SqlConnection(connectionString))
             {
-                var line = contentLine.Replace("\r", string.Empty);
-                //line = contentLine.Replace("\n", string.Empty);
+                sqlConnection.Open();
 
-                string[] fieldData = line.Split(',');
-
-                if (metaData != null && fieldData.Length >= metaData.Fields.Count)
+                foreach (var contentLine in contentLines)
                 {
-                    var tableName = string.Empty;
+                    var line = contentLine.Trim();
+                    var fieldData = line.Split(',');
 
-                    if (!string.IsNullOrEmpty(metaData.Name))
-                        tableName = metaData.Name;
-                    else
-                        tableName = "ID_" + Math.Abs(metaData.ID);
-
-                    sqlQuery = "INSERT INTO " + tableName + "(";
-
-                    for (var i = 0; i < metaData.Fields.Count; i++)
+                    if (metaData != null && fieldData.Length >= metaData.Fields.Count)
                     {
-                        if (i > 0) sqlQuery += ",";
+                        sqlQuery = $"INSERT INTO {tableName} ({string.Join(", ", metaData.Fields.Keys)}) VALUES ({string.Join(", ", fieldData.Select(fd => $"'{fd}'"))})";
 
-                        sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "]";
+                        using (var sqlCommand = new SqlCommand(sqlQuery, sqlConnection))
+                        {
+                            sqlCommand.ExecuteNonQuery();
+                        }
                     }
-
-                    sqlQuery += ") VALUES (";
-
-                    for (var i = 0; i < fieldData.Length; i++)
-                    {
-                        if (i > 0) sqlQuery += ",";
-
-                        sqlQuery += "'" + fieldData[i] + "'";
-                    }
-
-                    sqlQuery += ")";
-
-                    sqlConnection.Open();
-                    sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
-                    sqlCommand.ExecuteNonQuery();
-                    sqlConnection.Close();
                 }
             }
         }
@@ -110,25 +106,107 @@ public static class SQLHelper
         }
     }
 
+    //public static void UpdateSQLTable(MetaData metaData, string fileContent)
+    //{
+    //    var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
+    //    var sqlCommand = sqlConnection.CreateCommand();
+
+    //    var sqlQuery = string.Empty;
+
+    //    try
+    //    {
+    //        string[] contentLines = fileContent.Split('\n');
+
+    //        foreach (var contentLine in contentLines)
+    //        {
+    //            var line = contentLine.Replace("\r", string.Empty);
+    //            //line = contentLine.Replace("\n", string.Empty);
+
+    //            string[] fieldData = line.Split(',');
+
+    //            if (metaData != null && fieldData.Length >= metaData.Fields.Count)
+    //            {
+    //                var tableName = string.Empty;
+
+    //                if (!string.IsNullOrEmpty(metaData.Name))
+    //                    tableName = metaData.Name;
+    //                else
+    //                    tableName = "ID_" + Math.Abs(metaData.ID);
+
+    //                sqlQuery = "INSERT INTO " + tableName + "(";
+
+    //                for (var i = 0; i < metaData.Fields.Count; i++)
+    //                {
+    //                    if (i > 0) sqlQuery += ",";
+
+    //                    sqlQuery += "[" + metaData.Fields.ToArray()[i].Key + "]";
+    //                }
+
+    //                sqlQuery += ") VALUES (";
+
+    //                for (var i = 0; i < fieldData.Length; i++)
+    //                {
+    //                    if (i > 0) sqlQuery += ",";
+
+    //                    sqlQuery += "'" + fieldData[i] + "'";
+    //                }
+
+    //                sqlQuery += ")";
+
+    //                sqlConnection.Open();
+    //                sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
+    //                sqlCommand.ExecuteNonQuery();
+    //                sqlConnection.Close();
+    //            }
+    //        }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Error: {ex.Message}");
+    //    }
+    //}
+
     public static void DeleteSQLTable(string tableName)
     {
-        var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
-        var sqlCommand = sqlConnection.CreateCommand();
-
-        var sqlQuery = string.Empty;
-
-        sqlQuery = "DROP TABLE " + tableName;
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+        var sqlConnection = new SqlConnection(connectionString);
+        var sqlQuery = $"DROP TABLE {tableName}";
 
         try
         {
             sqlConnection.Open();
-            sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
+            using var sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
             sqlCommand.ExecuteNonQuery();
-            sqlConnection.Close();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error DNE: {ex.Message}");
+            throw; // Re-throw the exception instead of just logging it
+        }
+        finally
+        {
+            sqlConnection.Close();
         }
     }
+
+    //public static void DeleteSQLTable(string tableName)
+    //{
+    //    var sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["HealthDB"]);
+    //    var sqlCommand = sqlConnection.CreateCommand();
+
+    //    var sqlQuery = string.Empty;
+
+    //    sqlQuery = "DROP TABLE " + tableName;
+
+    //    try
+    //    {
+    //        sqlConnection.Open();
+    //        sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
+    //        sqlCommand.ExecuteNonQuery();
+    //        sqlConnection.Close();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Error DNE: {ex.Message}");
+    //    }
+    //}
 }
