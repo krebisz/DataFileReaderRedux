@@ -1,5 +1,5 @@
-﻿using System.Data;
-using DataFileReader.Class;
+﻿using DataFileReader.Class;
+using System.Data;
 
 namespace DataFileReader.Helper;
 
@@ -57,7 +57,7 @@ public static class ConsoleHelper
         Console.ForegroundColor = colour;
         var padLevel = int.Parse(level) * 2;
         var paddedPrefix = string.Empty.PadLeft(padLevel);
-        var paddedKey = (paddedPrefix + "|" + key).PadRight(30);
+        var paddedKey = (paddedPrefix + "|" + key).PadRight(32);
 
         Console.Write(paddedKey);
 
@@ -72,6 +72,57 @@ public static class ConsoleHelper
 
         Console.ForegroundColor = colour;
         Console.Write(metaId.PadRight(30));
+
+        Console.WriteLine();
+    }
+    public static void PrintHierarchyObject(string key, string Id, string level, string value, string parent, string metaId, string refVal, ConsoleColor colour)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   ID: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(Id.PadRight(2));
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   PARENT: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(parent.PadRight(2));
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   LEVEL: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(level.PadRight(2));
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write(" OBJECT: ");
+
+        Console.ForegroundColor = colour;
+        var padLevel = int.Parse(level) * 2;
+        var paddedPrefix = string.Empty.PadLeft(padLevel);
+        var paddedKey = (paddedPrefix + "|" + key).PadRight(32);
+
+        Console.Write(paddedKey);
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   VALUE: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(value.PadRight(60));
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("   META-ID: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(metaId.PadRight(30));
+
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("  REFVAL: ");
+
+        Console.ForegroundColor = colour;
+        Console.Write(refVal.PadRight(30));
 
         Console.WriteLine();
     }
@@ -100,6 +151,12 @@ public static class ConsoleHelper
         Console.WriteLine("METADATA:");
 
         var variableColour = ConsoleOutputColour(metaData.Type);
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write("NAME: ");
+
+        Console.ForegroundColor = variableColour;
+        Console.Write($" {metaData.Name.PadRight(16)}");
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.Write("Type: ");
@@ -157,5 +214,57 @@ public static class ConsoleHelper
         {
             Console.WriteLine(string.Join(", ", row.ItemArray));
         }
+
+        //for (int i = 0; i < flattenedData.Rows.Count; i++)
+        //{
+        //    for (int j = 0; j < flattenedData.Columns.Count; j++)
+        //    {
+        //        Console.Write(flattenedData.Rows[i][j].ToString() + ", ");
+        //    }
+
+        //    Console.WriteLine();
+        //}
     }
+
+    public static void PrintDataTable(DataTable dataTable)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine();
+        Console.WriteLine("DATATABLE:");
+
+        for (int i = 0; i < dataTable.Columns.Count; i++)
+        {
+            //Console.Write(dataTable.Columns[i].ColumnName + ", ");
+            int Valuepadding = dataTable.Rows[0][i].ToString().Length;
+            string columnName = "[" + dataTable.Columns[i].ColumnName + "]";
+            int Namepadding = columnName.Length;
+
+            int padding = Math.Max(Valuepadding, Namepadding);
+
+            Console.Write(columnName.PadRight(padding + 1));
+        }
+
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Green;
+
+        foreach (DataRow row in dataTable.Rows)
+        {
+            for(int i = 0; i < dataTable.Columns.Count; i++)
+            {
+                //Console.Write(dataTable.Columns[i].ColumnName + ", ");
+                int Valuepadding = dataTable.Rows[0][i].ToString().Length;
+                string columnName = "[" + dataTable.Columns[i].ColumnName + "]";
+                int Namepadding = columnName.Length;
+
+                int padding = Math.Max(Valuepadding, Namepadding);
+
+                Console.Write(row[i].ToString().PadRight(padding + 1));
+            }
+
+            Console.WriteLine();
+            //Console.WriteLine(string.Join(", ", row.ItemArray));
+        }
+    }
+
 }

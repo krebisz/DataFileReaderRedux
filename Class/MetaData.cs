@@ -1,6 +1,4 @@
 ﻿using System.Data;
-using System.Data.Common;
-using System.Xml;
 
 namespace DataFileReader.Class
 {
@@ -109,12 +107,9 @@ namespace DataFileReader.Class
             MetaDataObjects = metaDataList;
         }
 
-
         public List<MetaData> MetaDataObjects { get; set; }
 
-
         public List<string> ElementsList = new List<string>();
-
 
         public DataTable FlattenData(HierarchyObjectList hierarchyObjectList)
         {
@@ -137,9 +132,6 @@ namespace DataFileReader.Class
             string[] dataFields = new string[flattenedData.Columns.Count];
             string[] currentDataFields = new string[flattenedData.Columns.Count];
 
-
-
-
             //HIERARCHYOBJECTS SHOULD BE GUARANTEED TO BE SORTED BEFORE THE FOLLOWING:
             foreach (HierarchyObject hierarchyObject in hierarchyObjects)
             {
@@ -149,7 +141,6 @@ namespace DataFileReader.Class
                 if (hierarchyObject.ClassID == "Element")
                 {
                     DataColumn? flattenedDataColumn = flattenedData.Columns.Cast<DataColumn>().SingleOrDefault(col => col.ColumnName == hierarchyObject.Name);
-
 
                     if (flattenedDataColumn != null)
                     {
@@ -162,18 +153,15 @@ namespace DataFileReader.Class
                 }
             }
 
-
             for (int i = 0; i < flattenedData.Rows.Count; i++)
             {
                 for (int j = 0; j < flattenedData.Columns.Count; j++)
                 {
                     currentDataFields[j] = flattenedData.Rows[i][j].ToString();
 
-
                     if (!String.IsNullOrEmpty(currentDataFields[j]))
                     {
                         dataFields[j] = currentDataFields[j];
-
                     }
                     else
                     {
@@ -183,13 +171,10 @@ namespace DataFileReader.Class
                 }
             }
 
-
             DataTable distinctTable = GetDistinctRows(flattenedData);
-
 
             return distinctTable;
         }
-
 
         //SORT OF DATATABLE IS ASSUMED
         public static int GetNonEmptyFieldsTotal(DataTable dataTable)
@@ -216,7 +201,6 @@ namespace DataFileReader.Class
             return fieldTotal;
         }
 
-
         public static int GetNonEmptyFieldsTotal(object?[] rowArray)
         {
             int fieldTotal = 0;
@@ -231,9 +215,6 @@ namespace DataFileReader.Class
 
             return fieldTotal;
         }
-
-
-
 
         public static DataTable GetDistinctRows(DataTable sourceTable)
         {
@@ -292,8 +273,4 @@ namespace DataFileReader.Class
             return hash;
         }
     }
-
-
-
-
 }

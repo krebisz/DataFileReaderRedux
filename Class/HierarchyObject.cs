@@ -31,6 +31,9 @@ public class HierarchyObject
 
     public int? MetaDataID { get; set; }
 
+    public string RefVal { get; set; }
+
+
     public Dictionary<string, Type> Fields { get; set; }
 
     public KeyValuePair<string, JsonNode?> Element { get; set; }
