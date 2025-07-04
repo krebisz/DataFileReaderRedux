@@ -10,14 +10,14 @@
         "projectUniqueName": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
         "projectName": "DataFileReader",
         "projectPath": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
-        "packagesPath": "C:\\Users\\The Master\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\HP Omen\\.nuget\\packages\\",
         "outputPath": "C:\\Development\\POCs\\DataFileReader\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\The Master\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\HP Omen\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -45,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -53,7 +53,7 @@
           "dependencies": {
             "Azure.Data.Tables": {
               "target": "Package",
-              "version": "[12.10.0, )"
+              "version": "[12.11.0, )"
             },
             "Newtonsoft.Json": {
               "target": "Package",
@@ -61,7 +61,7 @@
             },
             "OpenAI": {
               "target": "Package",
-              "version": "[2.2.0-beta.2, )"
+              "version": "[2.2.0, )"
             },
             "RestClient": {
               "target": "Package",
@@ -100,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
