@@ -1,4 +1,4 @@
-﻿using DataFileReader.Class;
+using DataFileReader.Class;
 using DataFileReader.Helper;
 using System.Configuration;
 using System.Data;
@@ -121,7 +121,12 @@ internal class Program
             metaData.Name = hierarchyObject.Name;
             metaData.Type = hierarchyObject.ClassID;
             //metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
-            metaData.RefVal = hierarchyObject.RefVal;
+
+            int? referenceValue = null;
+            metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
+
+            //metaData.RefVal = hierarchyObject.RefVal;
+
 
             if (metaData.Type != "Element")
             {
@@ -145,7 +150,6 @@ internal class Program
                     //
                 }
             }
-
         }
 
         Console.ForegroundColor = ConsoleColor.White;
