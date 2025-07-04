@@ -1,4 +1,4 @@
-﻿using DataFileReader.Class;
+using DataFileReader.Class;
 using DataFileReader.Helper;
 using System.Configuration;
 using System.Data;
@@ -93,9 +93,19 @@ internal class Program
         //DataHelper.GenerateObjectHierarchyMetaID(ref HierarchyObjectList);
         HierarchyObjectList.GenerateMetaIDs();
 
+
+        DataTable hierarchyDataTable = DataHelper.HierarchyObjectList_To_DataTable(HierarchyObjectList);
+
+
+
         foreach (var hierarchyObject in HierarchyObjectList.HierarchyObjects) //MAKE SURE HIERARCHY IS SORTED, OR, GENERATE PARENT ID's RETROACTIVELY
         {
-            ConsoleHelper.PrintFields(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
+            int? referenceValue = null;
+            hierarchyObject.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
+
+
+            //ConsoleHelper.PrintFields(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
+            ConsoleHelper.PrintHierarchyObject(hierarchyObject.Name, hierarchyObject.ID.ToString(), hierarchyObject.Level.ToString(), hierarchyObject.Value, hierarchyObject.ParentID.ToString(), hierarchyObject.MetaDataID.ToString(), hierarchyObject.RefVal, ConsoleHelper.ConsoleOutputColour(hierarchyObject.ClassID));
 
             var metaData = new MetaData();
 
@@ -111,18 +121,21 @@ internal class Program
             metaData.Name = hierarchyObject.Name;
             metaData.Type = hierarchyObject.ClassID;
             //metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
+
             int? referenceValue = null;
             metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
+
+            //metaData.RefVal = hierarchyObject.RefVal;
+
 
             if (metaData.Type != "Element")
             {
                 var existingMetaData = MetaDataList.MetaDataObjects.FirstOrDefault(x => x.RefVal == metaData.RefVal);
 
-                //if (existingMetaData is null && metaData.Type != "Element") MetaDataList.MetaDataObjects.Add(metaData);
-                if (existingMetaData is null)
-                {
+                //if (existingMetaData is null)
+                //{
                     MetaDataList.MetaDataObjects.Add(metaData);
-                }
+                //}
             }
             else
             {
@@ -131,6 +144,10 @@ internal class Program
                 if (existingElement is null)
                 {
                     MetaDataList.ElementsList.Add(metaData.Name);
+                }
+                else
+                {
+                    //
                 }
             }
         }
@@ -150,6 +167,10 @@ internal class Program
         //ConsoleHelper.PrintMetaDataElements(MetaDataList.ElementsList);
 
         DataTable flattenedData = MetaDataList.FlattenData(HierarchyObjectList);
+
+        ConsoleHelper.PrintDataTable(hierarchyDataTable);
+
+
         ConsoleHelper.PrintFlattenedData(flattenedData);
     }
 

@@ -1,5 +1,7 @@
-﻿using DataFileReader.Class;
+using DataFileReader.Class;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel;
+using System.Data;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -539,4 +541,32 @@ public static class DataHelper
     }
 
     #endregion CharacterOperations
+
+
+
+
+
+
+
+    public static DataTable HierarchyObjectList_To_DataTable(HierarchyObjectList hierarchyObjectList)
+    {
+        DataTable dataTable = new DataTable();
+
+        foreach (HierarchyObject h in hierarchyObjectList.HierarchyObjects)
+        {
+            DataColumn dataColumn = new DataColumn(h.ID.ToString(), typeof(string));
+            dataTable.Columns.Add(dataColumn);
+        }
+
+        DataRow dataRow = dataTable.NewRow();
+
+        foreach (HierarchyObject h in hierarchyObjectList.HierarchyObjects)
+        {
+            dataRow[h.ID.ToString()] = h.Value;
+        }
+
+        dataTable.Rows.Add(dataRow);
+
+        return dataTable;
+    }
 }
