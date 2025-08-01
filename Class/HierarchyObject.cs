@@ -1,8 +1,22 @@
-﻿using System.Text.Json.Nodes;
+﻿using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 public class HierarchyObject
 {
     public HierarchyObject() : this(0, string.Empty, string.Empty, 0, null, string.Empty) { }
+
+    //public HierarchyObject(string path, JToken jToken, string classID)
+    //{
+    //    ID = 0;
+    //    Name = path;
+    //    Value = jToken.ToString();
+    //    Level = 0;
+    //    ParentID = null;
+    //    ClassID = classID;
+    //    MetaDataID = null;
+    //    Fields = new Dictionary<string, Type>();
+    //    Element = new KeyValuePair<string, JsonNode?>(path, jToken as JsonNode);
+    //}
 
     public HierarchyObject(int id, string name, string value, int? level, int? parentId, string classId)
     {
@@ -20,6 +34,8 @@ public class HierarchyObject
     public int ID { get; set; }
 
     public string Name { get; set; }
+
+    public string Bucket { get; set; }
 
     public string Value { get; set; }
 

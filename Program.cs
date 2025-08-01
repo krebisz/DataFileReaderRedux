@@ -1,5 +1,6 @@
 using DataFileReader.Class;
 using DataFileReader.Helper;
+using Newtonsoft.Json.Linq;
 using System.Configuration;
 using System.Data;
 
@@ -7,10 +8,16 @@ namespace DataFileReader;
 
 internal class Program
 {
+    public static Dictionary<string, string> FlatMap = new();
+
+
     public static string TopDirectory; // = @"C:\Documents\Temp\csv\";
 
     public static List<string> FileList = new();
     public static MetaDataList MetaDataList = new();
+
+
+    public static HierarchyObjectList _hierarchyObjectList;
 
     private static void Main(string[] args)
     {
@@ -68,15 +75,30 @@ internal class Program
         fileData = DataHelper.RemoveEscapeCharacters(fileData);
         fileData = DataHelper.RemoveFaultyCharacterSequences(fileData);
 
-        var dynamicObject = new object();
+
+
+
+        //HierarchyObjectList hierarchyObjectList = new HierarchyObjectList();
+        JToken jsonData = JToken.Parse(fileData);
+
+        _hierarchyObjectList = new HierarchyObjectList();
+
+        //HierarchyObject hierarchyObject = new HierarchyObject(0, "Root", "Root", 0, null, "Container");
+        //_hierarchyObjectList.Add(hierarchyObject);
+
+        TraverseJson(jsonData);
+        GenerateMetaDataList(_hierarchyObjectList);
+
+        //HierarchyObjectList HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", jsonData.ToString(), 0, null);
+
 
         try
         {
-            string formattedData = DataHelper.RemoveEscapeCharacters(fileData);
-            formattedData = DataHelper.RemoveFaultyCharacterSequences(formattedData);
-            HierarchyObjectList HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", formattedData, 0, null);
+            //string formattedData = DataHelper.RemoveEscapeCharacters(fileData);
+            //formattedData = DataHelper.RemoveFaultyCharacterSequences(formattedData);
+            //HierarchyObjectList HierarchyObjectList = DataHelper.GetObjectHierarchy(0, "Root", formattedData, 0, null);
 
-            GenerateMetaDataList(HierarchyObjectList);
+            //GenerateMetaDataList(HierarchyObjectList);
         }
         catch (Exception ex)
         {
@@ -91,6 +113,10 @@ internal class Program
     public static void GenerateMetaDataList(HierarchyObjectList HierarchyObjectList)
     {
         CreateMetaData(HierarchyObjectList);
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine();
+        Console.WriteLine("METADATA:");
 
         foreach (var metaData in MetaDataList.MetaDataObjects)
         {
@@ -134,7 +160,7 @@ internal class Program
             metaData.Type = hierarchyObject.ClassID;
             //metaData.RefVal = hierarchyObject.ParentID.ToString() + ":" + metaData.ID.ToString();
 
-            int? referenceValue = null;
+            //int? referenceValue = null;
             metaData.RefVal = GetMetaDataObjectReferenceValue(HierarchyObjectList.HierarchyObjects, hierarchyObject.ID, ref referenceValue).ToString();
 
             //metaData.RefVal = hierarchyObject.RefVal;
@@ -176,5 +202,62 @@ internal class Program
         }
 
         return referenceValue;
+    }
+
+
+
+
+
+
+
+
+    // Change TraverseJson to static so it can be called from a static context
+    public static void TraverseJson(JToken token, string path = "Root")
+    {
+        // Use a static local variable for flatMap since static methods can't access instance fields
+        // If you want to keep flatMap as a class-level field, make it static as well
+        // For now, let's use a static local variable for demonstration
+        // If you want to accumulate results across calls, consider making flatMap static at the class level
+        // Dictionary<string, string> flatMap = new(); // Remove this line if you want to use the class-level static field
+
+        if (token is JObject obj)
+        {
+            foreach (var prop in obj.Properties())
+            {
+                string currentPath = string.IsNullOrEmpty(path) ? prop.Name : $"{path}.{prop.Name}";
+                _hierarchyObjectList.Add(path, token, "Container");
+                TraverseJson(prop.Value, currentPath);
+            }
+        }
+        else if (token is JArray array)
+        {
+            for (int i = 0; i < array.Count; i++)
+            {
+                string currentPath = $"{path}[{i}]";
+                _hierarchyObjectList.Add(path, token, "Array");
+                TraverseJson(array[i], currentPath);
+            }
+        }
+        else
+        {
+            FlatMap[path] = token.ToString();
+            _hierarchyObjectList.Add(path, token, "Element");
+            // Primitive value (string, number, bool, etc.)
+            Console.WriteLine($"Path: {path}, Value: {token}");
+
+
+
+
+
+            //HierarchyObject hierarchyObject = new HierarchyObject
+            //{
+            //    Name = path,
+            //    Value = token.ToString(),
+            //    ClassID = "Element",
+            //    Level = 0, // Adjust level as needed
+            //    ParentID = null, // Adjust parent ID as needed
+            //    ID = 0 // Assign a unique ID as needed
+            //};
+        }
     }
 }

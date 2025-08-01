@@ -146,9 +146,9 @@ public static class ConsoleHelper
 
     public static void PrintMetaData(MetaData metaData)
     {
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine();
-        Console.WriteLine("METADATA:");
+        //Console.ForegroundColor = ConsoleColor.White;
+        //Console.WriteLine();
+        //Console.WriteLine("METADATA:");
 
         var variableColour = ConsoleOutputColour(metaData.Type);
 

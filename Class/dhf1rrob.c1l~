@@ -31,8 +31,8 @@ public class HierarchyObjectList
     {
         HierarchyObject hierarchyObject = new HierarchyObject();
 
-        
         string[] pathParts = path.Split('.');
+
 
         hierarchyObject.ID = HierarchyObjects.Count + 1; // Simple ID generation
         hierarchyObject.Name = pathParts.Last();
@@ -41,23 +41,9 @@ public class HierarchyObjectList
         hierarchyObject.Level = FindLevel(hierarchyObject.ParentID); // Default level, can be adjusted later
         hierarchyObject.ClassID = classID;
 
-
-        if (classID == "Container")
+        if (classID != "Element")
         {
-            //JEnumerable<JToken> childTokens = jToken.Children();
-
-            foreach (var child in jToken.Children<JProperty>())
-            {
-                string childName = child.Name; // This is the property name
-                hierarchyObject.Value += $"{childName}; ";
-            }
-        }
-        else if (classID == "Array")
-        {
-            for (int i = 0; i < jToken.Children().Count(); i++)
-            {
-                hierarchyObject.Value += $"{hierarchyObject.Name}[{i}]; ";
-            }
+            hierarchyObject.Value = "";
         }
         else
         {
@@ -65,16 +51,11 @@ public class HierarchyObjectList
         }
 
 
-
-        hierarchyObject.MetaDataID = null; // Default MetaDataID, can be set later
+            hierarchyObject.MetaDataID = null; // Default MetaDataID, can be set later
         hierarchyObject.Fields = new Dictionary<string, Type>();
         //hierarchyObject.Element = new KeyValuePair<string, JsonNode?>(path, jToken as JsonNode);
-        hierarchyObject.GenerateMetaDataID();
 
-        if (!isDuplicate(hierarchyObject))
-        {
-            HierarchyObjects.Add(hierarchyObject);
-        }
+        HierarchyObjects.Add(hierarchyObject);
     }
 
 
@@ -134,11 +115,5 @@ public class HierarchyObjectList
         }
 
         return level;
-    }
-
-
-    public bool isDuplicate(HierarchyObject hierarchyObject)
-    {
-        return HierarchyObjects.Any(h => h.MetaDataID == hierarchyObject.MetaDataID && h.Name == hierarchyObject.Name && h.ParentID == hierarchyObject.ParentID);
     }
 }

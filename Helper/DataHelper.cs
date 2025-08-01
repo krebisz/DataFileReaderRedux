@@ -95,10 +95,12 @@ public static class DataHelper
 
         foreach (var jsonToken in jsonArray)
         {
-            string jsonString = jsonToken.ToString().Trim().Replace(" ", "");
-            jsonString = jsonString.Trim().Replace("\r", "");
-            jsonString = jsonString.Trim().Replace("\n", "");
-            jsonString = jsonString.Trim().Replace("\t", "");
+            //string jsonString = jsonToken.ToString().Trim().Replace(" ", "");
+            //jsonString = jsonString.Trim().Replace("\r", "");
+            //jsonString = jsonString.Trim().Replace("\n", "");
+            //jsonString = jsonString.Trim().Replace("\t", "");
+
+            string jsonString = RemoveEscapeCharacters(jsonToken.ToString());
 
             dynamic? dynamicObject = new object();
             dynamicObject = JsonSerializer.Deserialize<dynamic>(jsonString);
@@ -544,6 +546,110 @@ public static class DataHelper
 
 
 
+    // Custom comparer to treat nulls and empty strings as equal
+    public class RowComparer : IEqualityComparer<object[]>
+    {
+        public bool Equals(object[] x, object[] y)
+        {
+            if (x == null || y == null)
+                return x == y; // Both are null, so they're equal
+
+            // Compare each item in the row arrays
+            for (int i = 0; i < x.Length; i++)
+            {
+                // Treat null and empty strings as equal
+                if (string.IsNullOrEmpty(x[i]?.ToString()) && string.IsNullOrEmpty(y[i]?.ToString()))
+                    continue;
+
+                if (!object.Equals(x[i], y[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public int GetHashCode(object[] obj)
+        {
+            // A simple hash code implementation, ensuring that rows with null or empty values have the same hash code
+            int hash = 0;
+            foreach (var item in obj)
+            {
+                // Null and empty values are treated as the same
+                hash = hash * 31 + (item == null || string.IsNullOrEmpty(item.ToString()) ? 0 : item.GetHashCode());
+            }
+
+            return hash;
+        }
+    }
+
+
+
+
+
+    //SORT OF DATATABLE IS ASSUMED
+    public static int GetNonEmptyFieldsTotal(DataTable dataTable)
+    {
+        DataRow dataRow = dataTable.Rows[dataTable.Rows.Count - 1];
+
+        int fieldTotal = GetNonEmptyFieldsTotal(dataRow);
+
+        return fieldTotal;
+    }
+
+    public static int GetNonEmptyFieldsTotal(DataRow dataRow)
+    {
+        int fieldTotal = 0;
+
+        for (int j = 0; j < dataRow.ItemArray.Length; j++)
+        {
+            if (!String.IsNullOrEmpty(dataRow[j].ToString()))
+            {
+                fieldTotal++;
+            }
+        }
+
+        return fieldTotal;
+    }
+
+    public static int GetNonEmptyFieldsTotal(object?[] rowArray)
+    {
+        int fieldTotal = 0;
+
+        for (int j = 0; j < rowArray.Length; j++)
+        {
+            if (!String.IsNullOrEmpty(rowArray[j].ToString()))
+            {
+                fieldTotal++;
+            }
+        }
+
+        return fieldTotal;
+    }
+
+    public static DataTable GetDistinctRows(DataTable sourceTable)
+    {
+        int maxfieldTotal = GetNonEmptyFieldsTotal(sourceTable);
+
+        DataTable newTable = sourceTable.Clone();
+
+        List<object?[]> distinctRows = sourceTable.AsEnumerable().Select(row => row.ItemArray).Distinct(new RowComparer()).ToList(); // Apply the custom comparer
+
+        foreach (object?[] rowArray in distinctRows)
+        {
+            int fieldTotal = GetNonEmptyFieldsTotal(rowArray);
+
+            if (fieldTotal >= maxfieldTotal)
+            {
+                newTable.Rows.Add(rowArray); // Add each distinct row (as an array) to the new DataTable
+            }
+        }
+
+        return newTable;
+    }
+
+
+
+
 
 
 
@@ -569,4 +675,132 @@ public static class DataHelper
 
         return dataTable;
     }
+
+
+
+    public static DataTable HierarchyObjectList_To_DataTableNew(HierarchyObjectList hierarchyObjectList)
+    {
+        DataTable dataTable = new DataTable();
+
+        //1. SORT hierarchyObjectList first by ID, then by Level
+        //2. Create Sub-DataTables for each Level, starting with highest Levels, and the Common Parent ID as the first column (Key)
+        //3. Add the Values of each HierarchyObject to the corresponding Sub-DataTable
+        //4. Merge the Sub-DataTables into a new DataTable, with the Next Common Parent ID as the new first column
+        //4. Move to the next Level, and repeat until all Levels are processed, with the lowest Level being the last
+        //5. Return the new DataTable
+
+
+
+        var sortedHierarchyObjects = hierarchyObjectList.HierarchyObjects.OrderBy(h => h.Level).ThenBy(h => h.ID).ToList();
+        int maxLevel = (int)sortedHierarchyObjects.Max(h => h.Level);
+        int currentLevel = maxLevel;
+        Dictionary<int, DataTable> levelDataTables = new Dictionary<int, DataTable>();
+        // Create DataTables for each level
+        for (int i = 0; i <= maxLevel; i++)
+        {
+            DataTable levelDataTable = new DataTable($"Level_{i}");
+            levelDataTable.Columns.Add("ParentID", typeof(int?)); // Common Parent ID
+            levelDataTables[i] = levelDataTable;
+        }
+        // Populate DataTables with HierarchyObjects
+        foreach (var hierarchyObject in sortedHierarchyObjects)
+        {
+            // Get the DataTable for the current level
+            DataTable currentDataTable = levelDataTables[(int)hierarchyObject.Level];
+            // Create a new DataRow
+            DataRow dataRow = currentDataTable.NewRow();
+            dataRow["ParentID"] = hierarchyObject.ParentID;
+            // Add the HierarchyObject's ID and Value to the DataRow
+            dataRow[hierarchyObject.ID.ToString()] = hierarchyObject.Value;
+            // Add the DataRow to the current DataTable
+            currentDataTable.Rows.Add(dataRow);
+        }
+        // Merge DataTables into the final DataTable
+        foreach (var kvp in levelDataTables)
+        {
+            DataTable levelDataTable = kvp.Value;
+            if (dataTable.Columns.Count == 0)
+            {
+                // Initialize the main DataTable with the first level's columns
+                dataTable = levelDataTable.Clone();
+            }
+            else
+            {
+                // Add columns from the current level DataTable to the main DataTable
+                foreach (DataColumn column in levelDataTable.Columns)
+                {
+                    if (!dataTable.Columns.Contains(column.ColumnName))
+                    {
+                        dataTable.Columns.Add(column.ColumnName, column.DataType);
+                    }
+                }
+            }
+            // Merge rows from the current level DataTable into the main DataTable
+            foreach (DataRow row in levelDataTable.Rows)
+            {
+                DataRow newRow = dataTable.NewRow();
+                newRow.ItemArray = row.ItemArray;
+                dataTable.Rows.Add(newRow);
+            }
+        }
+        // Remove duplicate rows based on the ParentID and ID columns
+        var distinctRows = dataTable.AsEnumerable()
+            .GroupBy(row => new { ParentID = row.Field<int?>("ParentID"), ID = row.Field<string>("ID") })
+            .Select(g => g.First())
+            .CopyToDataTable();
+        dataTable = distinctRows;
+        // Ensure the ParentID column is the first column
+        if (dataTable.Columns.Contains("ParentID"))
+        {
+            DataColumn parentIdColumn = dataTable.Columns["ParentID"];
+            dataTable.Columns.Remove(parentIdColumn);
+            dataTable.Columns.Add(parentIdColumn);
+        }
+        // Ensure the ID column is the second column
+        if (dataTable.Columns.Contains("ID"))
+        {
+            DataColumn idColumn = dataTable.Columns["ID"];
+            dataTable.Columns.Remove(idColumn);
+            dataTable.Columns.Add(idColumn);
+        }
+        // Ensure the Value column is the third column
+        if (dataTable.Columns.Contains("Value"))
+        {
+            DataColumn valueColumn = dataTable.Columns["Value"];
+            dataTable.Columns.Remove(valueColumn);
+            dataTable.Columns.Add(valueColumn);
+        }
+        // Ensure the ClassID column is the fourth column
+        if (dataTable.Columns.Contains("ClassID"))
+        {
+            DataColumn classIdColumn = dataTable.Columns["ClassID"];
+            dataTable.Columns.Remove(classIdColumn);
+            dataTable.Columns.Add(classIdColumn);
+        }
+        // Ensure the Level column is the fifth column
+        if (dataTable.Columns.Contains("Level"))
+        {
+            DataColumn levelColumn = dataTable.Columns["Level"];
+            dataTable.Columns.Remove(levelColumn);
+            dataTable.Columns.Add(levelColumn);
+        }
+        // Ensure the MetaDataID column is the sixth column
+        if (dataTable.Columns.Contains("MetaDataID"))
+        {
+            DataColumn metaDataIdColumn = dataTable.Columns["MetaDataID"];
+            dataTable.Columns.Remove(metaDataIdColumn);
+            dataTable.Columns.Add(metaDataIdColumn);
+        }
+        // Ensure the Name column is the seventh column
+        if (dataTable.Columns.Contains("Name"))
+        {
+            DataColumn nameColumn = dataTable.Columns["Name"];
+            dataTable.Columns.Remove(nameColumn);
+            dataTable.Columns.Add(nameColumn);
+        }
+
+        return dataTable;
+    }
+
+
 }
