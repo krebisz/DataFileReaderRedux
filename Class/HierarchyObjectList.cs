@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DataFileReader.Class;
 
@@ -26,26 +25,22 @@ public class HierarchyObjectList
         }
     }
 
-
     public void Add(string path, JToken jToken, string classID)
     {
         HierarchyObject hierarchyObject = new HierarchyObject();
 
-        
         string[] pathParts = path.Split('.');
 
         hierarchyObject.ID = HierarchyObjects.Count + 1; // Simple ID generation
         hierarchyObject.Name = pathParts.Last();
-
         hierarchyObject.ParentID = FindParentID(pathParts); // Default parent ID, can be adjusted later
         hierarchyObject.Level = FindLevel(hierarchyObject.ParentID); // Default level, can be adjusted later
         hierarchyObject.ClassID = classID;
+        hierarchyObject.Path = path;
 
 
         if (classID == "Container")
         {
-            //JEnumerable<JToken> childTokens = jToken.Children();
-
             foreach (var child in jToken.Children<JProperty>())
             {
                 string childName = child.Name; // This is the property name
@@ -64,33 +59,14 @@ public class HierarchyObjectList
             hierarchyObject.Value = jToken.ToString();
         }
 
-
-
         hierarchyObject.MetaDataID = null; // Default MetaDataID, can be set later
         hierarchyObject.Fields = new Dictionary<string, Type>();
-        //hierarchyObject.Element = new KeyValuePair<string, JsonNode?>(path, jToken as JsonNode);
         hierarchyObject.GenerateMetaDataID();
 
         if (!isDuplicate(hierarchyObject))
         {
             HierarchyObjects.Add(hierarchyObject);
         }
-    }
-
-
-    public void Add(HierarchyObject hierarchyObject)
-    {
-        HierarchyObjects.Add(hierarchyObject);
-    }
-
-    public void AddRange(IEnumerable<HierarchyObject> hierarchyObjects)
-    {
-        HierarchyObjects.AddRange(hierarchyObjects);
-    }
-
-    public void Clear()
-    {
-        HierarchyObjects.Clear();
     }
 
     public int? FindParentID(string[] pathParts)
@@ -113,15 +89,6 @@ public class HierarchyObjectList
         }
 
         return HierarchyObjects.FirstOrDefault(h => h.Name == parentName).ID;
-
-        //string? parentName = pathParts.Length > 1 ? pathParts[pathParts.Length - 2] : null;
-
-        //if (parentName is null)
-        //{
-        //    return null; // No path parts provided
-        //}
-
-        //return HierarchyObjects.FirstOrDefault(h => h.Name == parentName).ID;
     }
 
     public int? FindLevel(int? parentID)
@@ -136,9 +103,9 @@ public class HierarchyObjectList
         return level;
     }
 
-
     public bool isDuplicate(HierarchyObject hierarchyObject)
     {
-        return HierarchyObjects.Any(h => h.MetaDataID == hierarchyObject.MetaDataID && h.Name == hierarchyObject.Name && h.ParentID == hierarchyObject.ParentID);
+        //return HierarchyObjects.Any(h => h.MetaDataID == hierarchyObject.MetaDataID && h.Name == hierarchyObject.Name && h.ParentID == hierarchyObject.ParentID);
+        return HierarchyObjects.Any(h => h.MetaDataID == hierarchyObject.MetaDataID && h.Name == hierarchyObject.Name && h.ParentID == hierarchyObject.ParentID && hierarchyObject.Path == h.Path);
     }
 }

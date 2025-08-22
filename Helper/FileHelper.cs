@@ -46,23 +46,4 @@ public static class FileHelper
         return fileExtension;
     }
 
-    public static List<string> GetDistinctFileExtensions(List<string> fileList)
-    {
-        List<string> fileExtensions = new List<string>();
-
-        foreach (var file in fileList)
-        {
-            var fileExtension = string.Empty;
-
-            string[] fileParts = file.Split('.');
-
-            var filePartsLength = fileParts.Length;
-
-            if (filePartsLength > 0) fileExtension = fileParts[filePartsLength - 1].Trim().ToLower();
-
-            if (!fileExtensions.Contains(fileExtension)) fileExtensions.Add(fileExtension);
-        }
-
-        return fileExtensions;
-    }
 }

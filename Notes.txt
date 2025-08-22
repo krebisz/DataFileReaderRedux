@@ -8,10 +8,22 @@ FOR DATAFILEREADER:
 
 
 
-
 DATE: 2025-02-24
 ------------------------------------------------------------------------------------------------------------------------------
 FOR DATAFILEREADER:
 -Exception message for certain hierarchy objects needs suppression --DONE
 -Metadatafields not adding already found fields for new parent
 -NEW: Alternate methods for GenerateValue created not working. Meant to show correct nested values for array object. --DONE
+
+
+
+DATE: 2025-08-12
+------------------------------------------------------------------------------------------------------------------------------
+FOR DATA-FLATTENING:
+-Create new DataTable to contain flattened data
+-Starting from deepest level, check for common Parent ID of each object (within MetaDataList -it excludes element objects)
+-If Parent ID is common, then check if MetaDataID is the same
+-If MetaDataID is the same, then:
+	a. Create a new DataColumn for each field in the parent object
+	b. Create a new DataColumn for the parent object name
+	c. Create a new DataRow

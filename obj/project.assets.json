@@ -4246,11 +4246,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
+      "projectUniqueName": "C:\\Development\\POCs\\DataFileReaderRedux\\DataFileReader.csproj",
       "projectName": "DataFileReader",
-      "projectPath": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
+      "projectPath": "C:\\Development\\POCs\\DataFileReaderRedux\\DataFileReader.csproj",
       "packagesPath": "C:\\Users\\HP Omen\\.nuget\\packages\\",
-      "outputPath": "C:\\Development\\POCs\\DataFileReader\\obj\\",
+      "outputPath": "C:\\Development\\POCs\\DataFileReaderRedux\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4343,7 +4343,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

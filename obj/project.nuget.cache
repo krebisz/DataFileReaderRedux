@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Dvtednfl+JA=",
+  "dgSpecHash": "nOZOSER+GRs=",
   "success": true,
-  "projectFilePath": "C:\\Development\\POCs\\DataFileReader\\DataFileReader.csproj",
+  "projectFilePath": "C:\\Development\\POCs\\DataFileReaderRedux\\DataFileReader.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HP Omen\\.nuget\\packages\\azure.core\\1.44.1\\azure.core.1.44.1.nupkg.sha512",
     "C:\\Users\\HP Omen\\.nuget\\packages\\azure.data.tables\\12.11.0\\azure.data.tables.12.11.0.nupkg.sha512",
