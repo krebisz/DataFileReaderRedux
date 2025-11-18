@@ -6,13 +6,13 @@ public static class FileHelper
     {
         List<string> fileList = new List<string>();
 
-        string[] files = Directory.GetFiles(directory);
+        string[] files = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
 
         foreach (var file in files) fileList.Add(file);
 
-        string[] subDirectories = Directory.GetDirectories(directory);
+        //string[] subDirectories = Directory.GetDirectories(directory);
 
-        foreach (var subDirectory in subDirectories) GetFileList(subDirectory);
+        //foreach (var subDirectory in subDirectories) GetFileList(subDirectory);
 
         return fileList;
     }
