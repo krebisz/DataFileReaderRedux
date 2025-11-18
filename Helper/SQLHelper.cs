@@ -71,6 +71,8 @@ public static class SQLHelper
             if (!string.IsNullOrEmpty(connectionString))
             {
                 EnsureMetricSubtypeColumnExists(connectionString);
+                // Create smaller-resolution HealthMetrics tables if they don't exist
+                EnsureHealthMetricsResolutionTablesExist(connectionString);
                 // Optimize indexes for existing tables (will skip if table was just created with optimized indexes)
                 OptimizeHealthMetricsIndexes();
                 // Ensure the summary counts table exists
@@ -81,6 +83,76 @@ public static class SQLHelper
         {
             Console.WriteLine($"Error creating HealthMetrics table: {ex.Message}");
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Ensures the per-resolution HealthMetrics tables exist (Second, Minute, Hour, Day, Week, Month, Year)
+    /// These tables are lightweight versions of HealthMetrics containing only:
+    /// Id, MetricType, MetricSubtype, NormalizedTimestamp, Value, Unit
+    /// Column names are consistent with the main HealthMetrics table.
+    /// </summary>
+    private static void EnsureHealthMetricsResolutionTablesExist(string connectionString)
+    {
+        if (string.IsNullOrEmpty(connectionString)) return;
+
+        var tableNames = new[]
+        {
+            "HealthMetricsSecond",
+            "HealthMetricsMinute",
+            "HealthMetricsHour",
+            "HealthMetricsDay",
+            "HealthMetricsWeek",
+            "HealthMetricsMonth",
+            "HealthMetricsYear"
+        };
+
+        var sb = new StringBuilder();
+
+        foreach (var table in tableNames)
+        {
+            sb.Append($@"
+                IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{table}]') AND type in (N'U'))
+                BEGIN
+                    CREATE TABLE [dbo].[{table}](
+                        [Id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+                        [MetricType] NVARCHAR(100) NULL,
+                        [MetricSubtype] NVARCHAR(200) NULL,
+                        [NormalizedTimestamp] DATETIME2 NULL,
+                        [Value] DECIMAL(18,4) NULL,
+                        [Unit] NVARCHAR(50) NULL
+                    );
+
+                    -- Useful index for MetricType + timestamp queries
+                    CREATE NONCLUSTERED INDEX IX_{table}_MetricType_Timestamp
+                        ON [dbo].[{table}](MetricType, NormalizedTimestamp)
+                        INCLUDE (Value, Unit)
+                        WHERE NormalizedTimestamp IS NOT NULL AND Value IS NOT NULL;
+
+                    -- Index on timestamp only for time-range queries
+                    CREATE NONCLUSTERED INDEX IX_{table}_Timestamp
+                        ON [dbo].[{table}](NormalizedTimestamp)
+                        WHERE NormalizedTimestamp IS NOT NULL;
+                END
+            ");
+        }
+
+        try
+        {
+            using (var sqlConnection = new SqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+                using (var sqlCommand = new SqlCommand(sb.ToString(), sqlConnection))
+                {
+                    sqlCommand.CommandTimeout = 120;
+                    sqlCommand.ExecuteNonQuery();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log but do not throw - these helper tables should not block main operations
+            Console.WriteLine($"Warning: Error creating resolution HealthMetrics tables: {ex.Message}");
         }
     }
 
@@ -619,12 +691,12 @@ public static class SQLHelper
                         {
                             var key = (MetricType: baseType, MetricSubtype: subtype ?? string.Empty);
                             var timestamp = metric.NormalizedTimestamp.Value;
-                            
+
                             if (!typeSubtypeData.ContainsKey(key))
                             {
                                 typeSubtypeData[key] = (Count: 0, MinTimestamp: timestamp, MaxTimestamp: timestamp);
                             }
-                            
+
                             var current = typeSubtypeData[key];
                             typeSubtypeData[key] = (
                                 Count: current.Count + 1,
