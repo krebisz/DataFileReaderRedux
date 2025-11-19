@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DataFileReader")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d096532f13e3d7d07b6e73470793f71f988f51a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f418653c46a6a957b1c54d9ee2e3ae3c333f597d")]
 [assembly: System.Reflection.AssemblyProductAttribute("DataFileReader")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DataFileReader")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

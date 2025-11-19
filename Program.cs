@@ -133,19 +133,19 @@ internal class Program
                         }
                         else if (fileExtension == "csv")
                         {
-                            //Console.WriteLine($"Processing Samsung Health CSV file: {fileName}");
-                            //var metrics = SamsungHealthCsvParser.Parse(file, fileContent);
+                            Console.WriteLine($"Processing Samsung Health CSV file: {fileName}");
+                            var metrics = SamsungHealthCsvParser.Parse(file, fileContent);
 
-                            //if (metrics.Count > 0)
-                            //{
-                            //    SQLHelper.InsertHealthMetrics(metrics);
-                            //    totalMetricsInserted += metrics.Count;
-                            //    Console.WriteLine($"  ✓ Inserted {metrics.Count} metrics");
-                            //}
-                            //else
-                            //{
-                            //    Console.WriteLine($"  ⚠ No metrics extracted");
-                            //}
+                            if (metrics.Count > 0)
+                            {
+                                SQLHelper.InsertHealthMetrics(metrics);
+                                totalMetricsInserted += metrics.Count;
+                                Console.WriteLine($"  ✓ Inserted {metrics.Count} metrics");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"  ⚠ No metrics extracted");
+                            }
                         }
                     }
                     else
