@@ -969,4 +969,310 @@ public static class SQLHelper
             sqlConnection.Close();
         }
     }
+
+    /// <summary>
+    /// Retrieves health metrics data from the HealthMetricsWeek table
+    /// </summary>
+    /// <param name="metricType">Optional filter by MetricType</param>
+    /// <param name="metricSubtype">Optional filter by MetricSubtype</param>
+    /// <param name="fromDate">Optional start date filter</param>
+    /// <param name="toDate">Optional end date filter</param>
+    /// <returns>List of weekly aggregated health metrics</returns>
+    public static List<HealthMetric> GetHealthMetricsWeek(
+        string? metricType = null,
+        string? metricSubtype = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null)
+    {
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+        var results = new List<HealthMetric>();
+
+        try
+        {
+            using (var sqlConnection = new SqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+
+                var sql = new StringBuilder(@"
+                    SELECT 
+                        MetricType,
+                        MetricSubtype,
+                        NormalizedTimestamp,
+                        Value,
+                        Unit
+                    FROM [dbo].[HealthMetricsWeek]
+                    WHERE 1=1");
+
+                var parameters = new List<SqlParameter>();
+
+                if (!string.IsNullOrEmpty(metricType))
+                {
+                    sql.Append(" AND MetricType = @MetricType");
+                    parameters.Add(new SqlParameter("@MetricType", metricType));
+                }
+
+                if (!string.IsNullOrEmpty(metricSubtype))
+                {
+                    sql.Append(" AND MetricSubtype = @MetricSubtype");
+                    parameters.Add(new SqlParameter("@MetricSubtype", metricSubtype));
+                }
+
+                if (fromDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp >= @FromDate");
+                    parameters.Add(new SqlParameter("@FromDate", fromDate.Value));
+                }
+
+                if (toDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp <= @ToDate");
+                    parameters.Add(new SqlParameter("@ToDate", toDate.Value));
+                }
+
+                sql.Append(" ORDER BY NormalizedTimestamp, MetricType, MetricSubtype");
+
+                using (var sqlCommand = new SqlCommand(sql.ToString(), sqlConnection))
+                {
+                    sqlCommand.Parameters.AddRange(parameters.ToArray());
+
+                    using (var reader = sqlCommand.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var metric = new HealthMetric
+                            {
+                                MetricType = reader["MetricType"]?.ToString() ?? string.Empty,
+                                MetricSubtype = reader["MetricSubtype"]?.ToString() ?? string.Empty,
+                                Value = reader["Value"] != DBNull.Value ? (decimal?)Convert.ToDecimal(reader["Value"]) : null,
+                                Unit = reader["Unit"]?.ToString() ?? string.Empty
+                            };
+
+                            if (reader["NormalizedTimestamp"] != DBNull.Value)
+                            {
+                                metric.NormalizedTimestamp = Convert.ToDateTime(reader["NormalizedTimestamp"]);
+                            }
+
+                            results.Add(metric);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving HealthMetricsWeek data: {ex.Message}");
+            throw;
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Aggregates data from HealthMetrics table by week and inserts into HealthMetricsWeek table
+    /// Groups by MetricType, MetricSubtype, and week (Monday as week start)
+    /// Averages the Value for each week
+    /// </summary>
+    /// <param name="metricType">Optional filter to aggregate only specific MetricType</param>
+    /// <param name="metricSubtype">Optional filter to aggregate only specific MetricSubtype</param>
+    /// <param name="fromDate">Optional start date to limit aggregation range</param>
+    /// <param name="toDate">Optional end date to limit aggregation range</param>
+    /// <param name="overwriteExisting">If true, deletes existing records for the same week/MetricType/MetricSubtype before inserting</param>
+    public static void InsertHealthMetricsWeek(
+        string? metricType = null,
+        string? metricSubtype = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        bool overwriteExisting = false)
+    {
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+
+        try
+        {
+            using (var sqlConnection = new SqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+
+                // Build the aggregation query
+                // Calculate week start (Monday) - works regardless of DATEFIRST setting
+                // Formula: DATEADD(day, -(DATEPART(weekday, date) + @@DATEFIRST - 2) % 7, date)
+                var sql = new StringBuilder(@"
+                    INSERT INTO [dbo].[HealthMetricsWeek]
+                    (MetricType, MetricSubtype, NormalizedTimestamp, Value, Unit)
+                    SELECT 
+                        MetricType,
+                        ISNULL(MetricSubtype, '') AS MetricSubtype,
+                        -- Calculate the start of the week (Monday)
+                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
+                                CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) AS WeekStart,
+                        AVG(Value) AS AvgValue,
+                        MAX(Unit) AS Unit
+                    FROM [dbo].[HealthMetrics]
+                    WHERE NormalizedTimestamp IS NOT NULL
+                        AND Value IS NOT NULL");
+
+                var parameters = new List<SqlParameter>();
+
+                if (!string.IsNullOrEmpty(metricType))
+                {
+                    sql.Append(" AND MetricType = @MetricType");
+                    parameters.Add(new SqlParameter("@MetricType", metricType));
+                }
+
+                if (!string.IsNullOrEmpty(metricSubtype))
+                {
+                    sql.Append(" AND ISNULL(MetricSubtype, '') = @MetricSubtype");
+                    parameters.Add(new SqlParameter("@MetricSubtype", metricSubtype));
+                }
+
+                if (fromDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp >= @FromDate");
+                    parameters.Add(new SqlParameter("@FromDate", fromDate.Value));
+                }
+
+                if (toDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp <= @ToDate");
+                    parameters.Add(new SqlParameter("@ToDate", toDate.Value));
+                }
+
+                sql.Append(@"
+                    GROUP BY 
+                        MetricType,
+                        ISNULL(MetricSubtype, ''),
+                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
+                                CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2))");
+
+                // If overwriteExisting is true, delete existing records first
+                if (overwriteExisting)
+                {
+                    var deleteSql = new StringBuilder(@"
+                        DELETE FROM [dbo].[HealthMetricsWeek]
+                        WHERE 1=1");
+
+                    var deleteParameters = new List<SqlParameter>();
+
+                    if (!string.IsNullOrEmpty(metricType))
+                    {
+                        deleteSql.Append(" AND MetricType = @DeleteMetricType");
+                        deleteParameters.Add(new SqlParameter("@DeleteMetricType", metricType));
+                    }
+
+                    if (!string.IsNullOrEmpty(metricSubtype))
+                    {
+                        deleteSql.Append(" AND ISNULL(MetricSubtype, '') = @DeleteMetricSubtype");
+                        deleteParameters.Add(new SqlParameter("@DeleteMetricSubtype", metricSubtype));
+                    }
+
+                    if (fromDate.HasValue || toDate.HasValue)
+                    {
+                        // Delete records in the date range
+                        if (fromDate.HasValue && toDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate AND NormalizedTimestamp <= @DeleteToDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+                            deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+                        }
+                        else if (fromDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+                        }
+                        else if (toDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp <= @DeleteToDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+                        }
+                    }
+
+                    using (var deleteCommand = new SqlCommand(deleteSql.ToString(), sqlConnection))
+                    {
+                        deleteCommand.Parameters.AddRange(deleteParameters.ToArray());
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                // Execute the insert query
+                using (var sqlCommand = new SqlCommand(sql.ToString(), sqlConnection))
+                {
+                    sqlCommand.Parameters.AddRange(parameters.ToArray());
+                    sqlCommand.CommandTimeout = 300; // 5 minutes timeout for large aggregations
+                    var rowsAffected = sqlCommand.ExecuteNonQuery();
+                    Console.WriteLine($"Inserted {rowsAffected} weekly aggregated records into HealthMetricsWeek.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error inserting HealthMetricsWeek data: {ex.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets the date range (min and max timestamps) for a specific MetricType and MetricSubtype combination
+    /// </summary>
+    /// <param name="metricType">The MetricType to query</param>
+    /// <param name="metricSubtype">The MetricSubtype to query (null or empty string for records without subtype)</param>
+    /// <returns>Tuple with MinDate and MaxDate, or null if no records found</returns>
+    public static (DateTime MinDate, DateTime MaxDate)? GetDateRangeForMetric(string metricType, string? metricSubtype = null)
+    {
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+
+        try
+        {
+            using (var sqlConnection = new SqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+
+                var sql = new StringBuilder(@"
+                    SELECT 
+                        MIN(NormalizedTimestamp) AS MinDate,
+                        MAX(NormalizedTimestamp) AS MaxDate
+                    FROM [dbo].[HealthMetrics]
+                    WHERE MetricType = @MetricType
+                        AND NormalizedTimestamp IS NOT NULL");
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@MetricType", metricType)
+                };
+
+                if (!string.IsNullOrEmpty(metricSubtype))
+                {
+                    sql.Append(" AND ISNULL(MetricSubtype, '') = @MetricSubtype");
+                    parameters.Add(new SqlParameter("@MetricSubtype", metricSubtype));
+                }
+                else
+                {
+                    sql.Append(" AND (MetricSubtype IS NULL OR MetricSubtype = '')");
+                }
+
+                using (var sqlCommand = new SqlCommand(sql.ToString(), sqlConnection))
+                {
+                    sqlCommand.Parameters.AddRange(parameters.ToArray());
+
+                    using (var reader = sqlCommand.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            if (reader["MinDate"] != DBNull.Value && reader["MaxDate"] != DBNull.Value)
+                            {
+                                var minDate = Convert.ToDateTime(reader["MinDate"]);
+                                var maxDate = Convert.ToDateTime(reader["MaxDate"]);
+                                return (minDate, maxDate);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting date range for {metricType}/{metricSubtype ?? "null"}: {ex.Message}");
+            throw;
+        }
+
+        return null;
+    }
 }

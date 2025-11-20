@@ -20,6 +20,19 @@ internal class Program
         Console.WriteLine("Health Data Reader - Starting...");
         Console.WriteLine("================================\n");
 
+        // Ask user if they want to aggregate Weight metrics by week
+        Console.WriteLine("Would you like to aggregate Weight metrics by week?");
+        Console.WriteLine("1. Yes - Aggregate Weight metrics by week");
+        Console.WriteLine("2. No - Skip aggregation and continue");
+        Console.Write("Enter your choice (1 or 2): ");
+
+        string? userChoice = Console.ReadLine();
+        while (userChoice != "1" && userChoice != "2")
+        {
+            Console.Write("Invalid choice. Please enter 1 or 2: ");
+            userChoice = Console.ReadLine();
+        }
+
         // Ensure database table exists
         try
         {
@@ -32,6 +45,18 @@ internal class Program
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
             return;
+        }
+
+        // Aggregate Weight metrics by week if user selected option 1
+        if (userChoice == "1")
+        {
+            Console.WriteLine("\nAggregating Weight metrics by week...\n");
+            AggregateWeightMetricsByWeek();
+            Console.WriteLine("\nWeight metrics aggregation complete.\n");
+        }
+        else
+        {
+            Console.WriteLine("\nSkipping Weight metrics aggregation.\n");
         }
 
         var rootDirectory = ConfigurationManager.AppSettings["RootDirectory"];
@@ -92,7 +117,7 @@ internal class Program
         }
 
 
-            Console.WriteLine($"{fileList.Count} file(s) remaining to process\n");
+        Console.WriteLine($"{fileList.Count} file(s) remaining to process\n");
 
         var maxFiles = int.TryParse(ConfigurationManager.AppSettings["MaxFilesToProcess"], out int max) && max > 0 ? max : fileList.Count;
         var processedCount = 0;
@@ -266,5 +291,69 @@ internal class Program
     public static void PrintFlattenedDataList(DataTable flattenedData)
     {
         ConsoleHelper.PrintFlattenedData(flattenedData);
+    }
+
+    /// <summary>
+    /// Aggregates Weight metrics by week for all Weight-related subtypes
+    /// Gets the date range for each MetricSubtype and calls InsertHealthMetricsWeek
+    /// </summary>
+    private static void AggregateWeightMetricsByWeek()
+    {
+        const string metricType = "Weight";
+        var metricSubtypes = new List<string?>
+        {
+            string.Empty, // Empty string for records without subtype
+            "basal_metabolic_rate",
+            "body_fat",
+            "body_fat_mass",
+            "fat_free",
+            "fat_free_mass",
+            "height",
+            "skeletal_muscle",
+            "skeletal_muscle_mass",
+            "total_body_water",
+            "weight"
+        };
+
+        foreach (var metricSubtype in metricSubtypes)
+        {
+            try
+            {
+                // Get the date range for this MetricType/MetricSubtype combination
+                // Pass null for empty string to match records without subtype
+                var dateRange = SQLHelper.GetDateRangeForMetric(metricType, string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype);
+
+                if (dateRange.HasValue)
+                {
+                    var (minDate, maxDate) = dateRange.Value;
+                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+
+                    Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
+                    Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
+
+                    // Insert weekly aggregated data, overwriting existing records for this combination
+                    // Pass empty string or null - InsertHealthMetricsWeek handles both
+                    SQLHelper.InsertHealthMetricsWeek(
+                        metricType: metricType,
+                        metricSubtype: string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype,
+                        fromDate: minDate,
+                        toDate: maxDate,
+                        overwriteExisting: true
+                    );
+
+                    Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
+                }
+                else
+                {
+                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+                    Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
+                }
+            }
+            catch (Exception ex)
+            {
+                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+                Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
+            }
+        }
     }
 }
