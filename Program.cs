@@ -51,8 +51,11 @@ internal class Program
         if (userChoice == "1")
         {
             Console.WriteLine("\nAggregating Weight metrics by week...\n");
-            //ggregateWeightMetricsByWeek();
-            AggregateWeightMetricsByMonth();
+            //AggregateWeightMetricsByWeek();
+            //AggregateWeightMetricsByMonth();
+
+            AggregateWeightMetrics(AggregationPeriod.Week);
+            AggregateWeightMetrics(AggregationPeriod.Month);
             Console.WriteLine("\nWeight metrics aggregation complete.\n");
         }
         else
@@ -294,131 +297,295 @@ internal class Program
         ConsoleHelper.PrintFlattenedData(flattenedData);
     }
 
-    /// <summary>
-    /// Aggregates Weight metrics by week for all Weight-related subtypes
-    /// Gets the date range for each MetricSubtype and calls InsertHealthMetricsWeek
-    /// </summary>
+    ///// <summary>
+    ///// Aggregates Weight metrics by week for all Weight-related subtypes
+    ///// Gets the date range for each MetricSubtype and calls InsertHealthMetricsWeek
+    ///// </summary>
+    //private static void AggregateWeightMetricsByWeek()
+    //{
+    //    const string metricType = "Weight";
+    //    var metricSubtypes = new List<string?>
+    //    {
+    //        string.Empty, // Empty string for records without subtype
+    //        "basal_metabolic_rate",
+    //        "body_fat",
+    //        "body_fat_mass",
+    //        "fat_free",
+    //        "fat_free_mass",
+    //        "height",
+    //        "skeletal_muscle",
+    //        "skeletal_muscle_mass",
+    //        "total_body_water",
+    //        "weight"
+    //    };
+
+    //    foreach (var metricSubtype in metricSubtypes)
+    //    {
+    //        try
+    //        {
+    //            // Get the date range for this MetricType/MetricSubtype combination
+    //            // Pass null for empty string to match records without subtype
+    //            var dateRange = SQLHelper.GetDateRangeForMetric(metricType, string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype);
+
+    //            if (dateRange.HasValue)
+    //            {
+    //                var (minDate, maxDate) = dateRange.Value;
+    //                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+
+    //                Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
+    //                Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
+
+    //                // Insert weekly aggregated data, overwriting existing records for this combination
+    //                // Pass empty string or null - InsertHealthMetricsWeek handles both
+    //                SQLHelper.InsertHealthMetricsWeek(
+    //                    metricType: metricType,
+    //                    metricSubtype: string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype,
+    //                    fromDate: minDate,
+    //                    toDate: maxDate,
+    //                    overwriteExisting: true
+    //                );
+
+    //                Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
+    //            }
+    //            else
+    //            {
+    //                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+    //                Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
+    //            }
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+    //            Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
+    //        }
+    //    }
+    //}
+
+    ///// <summary>
+    ///// Aggregates Weight metrics by week for all Weight-related subtypes
+    ///// Gets the date range for each MetricSubtype and calls InsertHealthMetricsWeek
+    ///// </summary>
+    //private static void AggregateWeightMetricsByMonth()
+    //{
+    //    const string metricType = "Weight";
+    //    var metricSubtypes = new List<string?>
+    //    {
+    //        string.Empty, // Empty string for records without subtype
+    //        "basal_metabolic_rate",
+    //        "body_fat",
+    //        "body_fat_mass",
+    //        "fat_free",
+    //        "fat_free_mass",
+    //        "height",
+    //        "skeletal_muscle",
+    //        "skeletal_muscle_mass",
+    //        "total_body_water",
+    //        "weight"
+    //    };
+
+    //    foreach (var metricSubtype in metricSubtypes)
+    //    {
+    //        try
+    //        {
+    //            // Get the date range for this MetricType/MetricSubtype combination
+    //            // Pass null for empty string to match records without subtype
+    //            var dateRange = SQLHelper.GetDateRangeForMetric(metricType, string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype);
+
+    //            if (dateRange.HasValue)
+    //            {
+    //                var (minDate, maxDate) = dateRange.Value;
+    //                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+
+    //                Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
+    //                Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
+
+    //                // Insert weekly aggregated data, overwriting existing records for this combination
+    //                // Pass empty string or null - InsertHealthMetricsMonth handles both
+    //                SQLHelper.InsertHealthMetricsMonth(
+    //                    metricType: metricType,
+    //                    metricSubtype: string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype,
+    //                    fromDate: minDate,
+    //                    toDate: maxDate,
+    //                    overwriteExisting: true
+    //                );
+
+    //                Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
+    //            }
+    //            else
+    //            {
+    //                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+    //                Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
+    //            }
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
+    //            Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
+    //        }
+    //    }
+    //}
+
+
+
+
+
+    private static void AggregateWeightMetrics(Action<string, string?, DateTime, DateTime> aggregationAction)
+    {
+        const string metricType = "Weight";
+        var metricSubtypes = new List<string?>
+    {
+        string.Empty,
+        "basal_metabolic_rate",
+        "body_fat",
+        "body_fat_mass",
+        "fat_free",
+        "fat_free_mass",
+        "height",
+        "skeletal_muscle",
+        "skeletal_muscle_mass",
+        "total_body_water",
+        "weight"
+    };
+
+        foreach (var metricSubtype in metricSubtypes)
+        {
+            var normalizedSubtype = string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype;
+            var subtypeDisplay = normalizedSubtype ?? "(no subtype)";
+
+            try
+            {
+                var dateRange = SQLHelper.GetDateRangeForMetric(metricType, normalizedSubtype);
+
+                if (!dateRange.HasValue)
+                {
+                    Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
+                    continue;
+                }
+
+                var (minDate, maxDate) = dateRange.Value;
+
+                Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
+                Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
+
+                // Delegate handles WEEK or MONTH insertion
+                aggregationAction(metricType, normalizedSubtype, minDate, maxDate);
+
+                Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
+            }
+        }
+    }
+
     private static void AggregateWeightMetricsByWeek()
     {
-        const string metricType = "Weight";
-        var metricSubtypes = new List<string?>
-        {
-            string.Empty, // Empty string for records without subtype
-            "basal_metabolic_rate",
-            "body_fat",
-            "body_fat_mass",
-            "fat_free",
-            "fat_free_mass",
-            "height",
-            "skeletal_muscle",
-            "skeletal_muscle_mass",
-            "total_body_water",
-            "weight"
-        };
-
-        foreach (var metricSubtype in metricSubtypes)
-        {
-            try
-            {
-                // Get the date range for this MetricType/MetricSubtype combination
-                // Pass null for empty string to match records without subtype
-                var dateRange = SQLHelper.GetDateRangeForMetric(metricType, string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype);
-
-                if (dateRange.HasValue)
-                {
-                    var (minDate, maxDate) = dateRange.Value;
-                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
-
-                    Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
-                    Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
-
-                    // Insert weekly aggregated data, overwriting existing records for this combination
-                    // Pass empty string or null - InsertHealthMetricsWeek handles both
-                    SQLHelper.InsertHealthMetricsWeek(
-                        metricType: metricType,
-                        metricSubtype: string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype,
-                        fromDate: minDate,
-                        toDate: maxDate,
-                        overwriteExisting: true
-                    );
-
-                    Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
-                }
-                else
-                {
-                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
-                    Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
-                }
-            }
-            catch (Exception ex)
-            {
-                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
-                Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
-            }
-        }
+        AggregateWeightMetrics(
+            (metricType, subtype, from, to) =>
+                SQLHelper.InsertHealthMetricsWeek(
+                    metricType: metricType,
+                    metricSubtype: subtype,
+                    fromDate: from,
+                    toDate: to,
+                    overwriteExisting: true
+                )
+        );
     }
 
-    /// <summary>
-    /// Aggregates Weight metrics by week for all Weight-related subtypes
-    /// Gets the date range for each MetricSubtype and calls InsertHealthMetricsWeek
-    /// </summary>
     private static void AggregateWeightMetricsByMonth()
+    {
+        AggregateWeightMetrics(
+            (metricType, subtype, from, to) =>
+                SQLHelper.InsertHealthMetricsMonth(
+                    metricType: metricType,
+                    metricSubtype: subtype,
+                    fromDate: from,
+                    toDate: to,
+                    overwriteExisting: true
+                )
+        );
+    }
+
+
+
+
+
+
+    private static Action<string, string?, DateTime, DateTime> GetAggregationAction(
+    AggregationPeriod period)
+    {
+        return period switch
+        {
+            AggregationPeriod.Week => (metricType, subtype, from, to) =>
+                SQLHelper.InsertHealthMetricsWeek(metricType, subtype, from, to, overwriteExisting: true),
+
+            AggregationPeriod.Month => (metricType, subtype, from, to) =>
+                SQLHelper.InsertHealthMetricsMonth(metricType, subtype, from, to, overwriteExisting: true),
+
+            //AggregationPeriod.Quarter => (metricType, subtype, from, to) =>
+            //    SQLHelper.InsertHealthMetricsQuarter(
+            //        metricType, subtype, from, to, overwriteExisting: true),
+
+            //AggregationPeriod.Year => (metricType, subtype, from, to) =>
+            //    SQLHelper.InsertHealthMetricsYear(
+            //        metricType, subtype, from, to, overwriteExisting: true),
+
+            _ => throw new NotSupportedException($"Aggregation period '{period}' not supported.")
+        };
+    }
+
+    private static void AggregateWeightMetrics(AggregationPeriod period)
     {
         const string metricType = "Weight";
         var metricSubtypes = new List<string?>
-        {
-            string.Empty, // Empty string for records without subtype
-            "basal_metabolic_rate",
-            "body_fat",
-            "body_fat_mass",
-            "fat_free",
-            "fat_free_mass",
-            "height",
-            "skeletal_muscle",
-            "skeletal_muscle_mass",
-            "total_body_water",
-            "weight"
-        };
+    {
+        string.Empty,
+        "basal_metabolic_rate",
+        "body_fat",
+        "body_fat_mass",
+        "fat_free",
+        "fat_free_mass",
+        "height",
+        "skeletal_muscle",
+        "skeletal_muscle_mass",
+        "total_body_water",
+        "weight"
+    };
+
+        var aggregationAction = GetAggregationAction(period);
 
         foreach (var metricSubtype in metricSubtypes)
         {
+            var normalizedSubtype = string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype;
+            var subtypeDisplay = normalizedSubtype ?? "(no subtype)";
+
             try
             {
-                // Get the date range for this MetricType/MetricSubtype combination
-                // Pass null for empty string to match records without subtype
-                var dateRange = SQLHelper.GetDateRangeForMetric(metricType, string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype);
+                var dateRange = SQLHelper.GetDateRangeForMetric(metricType, normalizedSubtype);
 
-                if (dateRange.HasValue)
+                if (!dateRange.HasValue)
                 {
-                    var (minDate, maxDate) = dateRange.Value;
-                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
-
-                    Console.WriteLine($"Processing {metricType}/{subtypeDisplay}...");
-                    Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
-
-                    // Insert weekly aggregated data, overwriting existing records for this combination
-                    // Pass empty string or null - InsertHealthMetricsMonth handles both
-                    SQLHelper.InsertHealthMetricsMonth(
-                        metricType: metricType,
-                        metricSubtype: string.IsNullOrEmpty(metricSubtype) ? null : metricSubtype,
-                        fromDate: minDate,
-                        toDate: maxDate,
-                        overwriteExisting: true
-                    );
-
-                    Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay}\n");
-                }
-                else
-                {
-                    var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
                     Console.WriteLine($"  ⚠ No data found for {metricType}/{subtypeDisplay}, skipping...\n");
+                    continue;
                 }
+
+                var (minDate, maxDate) = dateRange.Value;
+
+                Console.WriteLine($"Processing {metricType}/{subtypeDisplay} [{period}]...");
+                Console.WriteLine($"  Date range: {minDate:yyyy-MM-dd} to {maxDate:yyyy-MM-dd}");
+
+                aggregationAction(metricType, normalizedSubtype, minDate, maxDate);
+
+                Console.WriteLine($"  ✓ Completed {metricType}/{subtypeDisplay} [{period}]\n");
             }
             catch (Exception ex)
             {
-                var subtypeDisplay = string.IsNullOrEmpty(metricSubtype) ? "(no subtype)" : metricSubtype;
                 Console.WriteLine($"  ✗ Error processing {metricType}/{subtypeDisplay}: {ex.Message}\n");
             }
         }
     }
+
+
+
 }
