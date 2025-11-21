@@ -1102,8 +1102,7 @@ public static class SQLHelper
                         MetricType,
                         ISNULL(MetricSubtype, '') AS MetricSubtype,
                         -- Calculate the start of the week (Monday)
-                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
-                                CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) AS WeekStart,
+                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) AS WeekStart,
                         AVG(Value) AS AvgValue,
                         MAX(Unit) AS Unit
                     FROM [dbo].[HealthMetrics]
@@ -1140,8 +1139,7 @@ public static class SQLHelper
                     GROUP BY 
                         MetricType,
                         ISNULL(MetricSubtype, ''),
-                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
-                                CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2))");
+                        DATEADD(day, -(DATEPART(weekday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2))");
 
                 // If overwriteExisting is true, delete existing records first
                 if (overwriteExisting)
@@ -1208,6 +1206,154 @@ public static class SQLHelper
             throw;
         }
     }
+
+
+    /// <summary>
+    /// Aggregates data from HealthMetrics table by month and inserts into HealthMetricsMonth table
+    /// Groups by MetricType, MetricSubtype, and month (Monday as month start)
+    /// Averages the Value for each month
+    /// </summary>
+    /// <param name="metricType">Optional filter to aggregate only specific MetricType</param>
+    /// <param name="metricSubtype">Optional filter to aggregate only specific MetricSubtype</param>
+    /// <param name="fromDate">Optional start date to limit aggregation range</param>
+    /// <param name="toDate">Optional end date to limit aggregation range</param>
+    /// <param name="overwriteExisting">If true, deletes existing records for the same month/MetricType/MetricSubtype before inserting</param>
+    public static void InsertHealthMetricsMonth(
+        string? metricType = null,
+        string? metricSubtype = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        bool overwriteExisting = false)
+    {
+        var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+
+        try
+        {
+            using (var sqlConnection = new SqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+
+                // Build the aggregation query
+                // Calculate month start (Monday) - works regardless of DATEFIRST setting
+                // Formula: DATEADD(day, -(DATEPART(monthday, date) + @@DATEFIRST - 2) % 7, date)
+                var sql = new StringBuilder(@"
+                        INSERT INTO [dbo].[HealthMetricsMonth]
+                            (MetricType, MetricSubtype, NormalizedTimestamp, Value, Unit)
+                        SELECT 
+                            MetricType,
+                            ISNULL(MetricSubtype, '') AS MetricSubtype,
+                            DATEADD(MONTH, DATEDIFF(MONTH, 0, NormalizedTimestamp), 0) AS MonthStart,
+                            AVG(Value) AS AvgValue,
+                            MAX(Unit) AS Unit
+                            FROM [dbo].[HealthMetrics]
+                            WHERE NormalizedTimestamp IS NOT NULL
+                                AND Value IS NOT NULL");
+
+                var parameters = new List<SqlParameter>();
+
+                if (!string.IsNullOrEmpty(metricType))
+                {
+                    sql.Append(" AND MetricType = @MetricType");
+                    parameters.Add(new SqlParameter("@MetricType", metricType));
+                }
+
+                if (!string.IsNullOrEmpty(metricSubtype))
+                {
+                    sql.Append(" AND ISNULL(MetricSubtype, '') = @MetricSubtype");
+                    parameters.Add(new SqlParameter("@MetricSubtype", metricSubtype));
+                }
+
+                if (fromDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp >= @FromDate");
+                    parameters.Add(new SqlParameter("@FromDate", fromDate.Value));
+                }
+
+                if (toDate.HasValue)
+                {
+                    sql.Append(" AND NormalizedTimestamp <= @ToDate");
+                    parameters.Add(new SqlParameter("@ToDate", toDate.Value));
+                }
+
+                sql.Append(@"
+                    GROUP BY 
+                        MetricType,
+                        ISNULL(MetricSubtype, ''),
+                        DATEADD(MONTH, DATEDIFF(MONTH, 0, NormalizedTimestamp), 0)");
+
+                // If overwriteExisting is true, delete existing records first
+                if (overwriteExisting)
+                {
+                    var deleteSql = new StringBuilder(@"
+                        DELETE FROM [dbo].[HealthMetricsMonth]
+                        WHERE 1=1");
+
+                    var deleteParameters = new List<SqlParameter>();
+
+                    if (!string.IsNullOrEmpty(metricType))
+                    {
+                        deleteSql.Append(" AND MetricType = @DeleteMetricType");
+                        deleteParameters.Add(new SqlParameter("@DeleteMetricType", metricType));
+                    }
+
+                    if (!string.IsNullOrEmpty(metricSubtype))
+                    {
+                        deleteSql.Append(" AND ISNULL(MetricSubtype, '') = @DeleteMetricSubtype");
+                        deleteParameters.Add(new SqlParameter("@DeleteMetricSubtype", metricSubtype));
+                    }
+
+                    if (fromDate.HasValue || toDate.HasValue)
+                    {
+                        // Delete records in the date range
+                        if (fromDate.HasValue && toDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate AND NormalizedTimestamp <= @DeleteToDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+                            deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+                        }
+                        else if (fromDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+                        }
+                        else if (toDate.HasValue)
+                        {
+                            deleteSql.Append(" AND NormalizedTimestamp <= @DeleteToDate");
+                            deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+                        }
+                    }
+
+                    using (var deleteCommand = new SqlCommand(deleteSql.ToString(), sqlConnection))
+                    {
+                        deleteCommand.Parameters.AddRange(deleteParameters.ToArray());
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                // Execute the insert query
+                using (var sqlCommand = new SqlCommand(sql.ToString(), sqlConnection))
+                {
+                    sqlCommand.Parameters.AddRange(parameters.ToArray());
+                    sqlCommand.CommandTimeout = 300; // 5 minutes timeout for large aggregations
+                    var rowsAffected = sqlCommand.ExecuteNonQuery();
+                    Console.WriteLine($"Inserted {rowsAffected} monthly aggregated records into HealthMetricsMonth.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error inserting HealthMetricsMonth data: {ex.Message}");
+            throw;
+        }
+    }
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Gets the date range (min and max timestamps) for a specific MetricType and MetricSubtype combination
@@ -1276,3 +1422,147 @@ public static class SQLHelper
         return null;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //public static void InsertHealthMetricsMonth(
+    //    string? metricType = null,
+    //    string? metricSubtype = null,
+    //    DateTime? fromDate = null,
+    //    DateTime? toDate = null,
+    //    bool overwriteExisting = false)
+    //{
+    //    var connectionString = ConfigurationManager.AppSettings["HealthDB"];
+
+    //    try
+    //    {
+    //        using (var sqlConnection = new SqlConnection(connectionString))
+    //        {
+    //            sqlConnection.Open();
+
+    //            // Build the aggregation query
+    //            // Calculate month start (Monday) - works regardless of DATEFIRST setting
+    //            // Formula: DATEADD(day, -(DATEPART(monthday, date) + @@DATEFIRST - 2) % 7, date)
+    //            var sql = new StringBuilder(@"
+    //                INSERT INTO [dbo].[HealthMetricsMonth]
+    //                (MetricType, MetricSubtype, NormalizedTimestamp, Value, Unit)
+    //                SELECT 
+    //                    MetricType,
+    //                    ISNULL(MetricSubtype, '') AS MetricSubtype,
+    //                    -- Calculate the start of the month (Monday)
+    //                    DATEADD(day, -(DATEPART(monthday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
+    //                            CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) AS MonthStart,
+    //                    AVG(Value) AS AvgValue,
+    //                    MAX(Unit) AS Unit
+    //                FROM [dbo].[HealthMetrics]
+    //                WHERE NormalizedTimestamp IS NOT NULL
+    //                    AND Value IS NOT NULL");
+
+    //            var parameters = new List<SqlParameter>();
+
+    //            if (!string.IsNullOrEmpty(metricType))
+    //            {
+    //                sql.Append(" AND MetricType = @MetricType");
+    //                parameters.Add(new SqlParameter("@MetricType", metricType));
+    //            }
+
+    //            if (!string.IsNullOrEmpty(metricSubtype))
+    //            {
+    //                sql.Append(" AND ISNULL(MetricSubtype, '') = @MetricSubtype");
+    //                parameters.Add(new SqlParameter("@MetricSubtype", metricSubtype));
+    //            }
+
+    //            if (fromDate.HasValue)
+    //            {
+    //                sql.Append(" AND NormalizedTimestamp >= @FromDate");
+    //                parameters.Add(new SqlParameter("@FromDate", fromDate.Value));
+    //            }
+
+    //            if (toDate.HasValue)
+    //            {
+    //                sql.Append(" AND NormalizedTimestamp <= @ToDate");
+    //                parameters.Add(new SqlParameter("@ToDate", toDate.Value));
+    //            }
+
+    //            sql.Append(@"
+    //                GROUP BY 
+    //                    MetricType,
+    //                    ISNULL(MetricSubtype, ''),
+    //                    DATEADD(day, -(DATEPART(monthday, CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2)) + @@DATEFIRST - 2) % 7, 
+    //                            CAST(CAST(NormalizedTimestamp AS DATE) AS DATETIME2))");
+
+    //            // If overwriteExisting is true, delete existing records first
+    //            if (overwriteExisting)
+    //            {
+    //                var deleteSql = new StringBuilder(@"
+    //                    DELETE FROM [dbo].[HealthMetricsMonth]
+    //                    WHERE 1=1");
+
+    //                var deleteParameters = new List<SqlParameter>();
+
+    //                if (!string.IsNullOrEmpty(metricType))
+    //                {
+    //                    deleteSql.Append(" AND MetricType = @DeleteMetricType");
+    //                    deleteParameters.Add(new SqlParameter("@DeleteMetricType", metricType));
+    //                }
+
+    //                if (!string.IsNullOrEmpty(metricSubtype))
+    //                {
+    //                    deleteSql.Append(" AND ISNULL(MetricSubtype, '') = @DeleteMetricSubtype");
+    //                    deleteParameters.Add(new SqlParameter("@DeleteMetricSubtype", metricSubtype));
+    //                }
+
+    //                if (fromDate.HasValue || toDate.HasValue)
+    //                {
+    //                    // Delete records in the date range
+    //                    if (fromDate.HasValue && toDate.HasValue)
+    //                    {
+    //                        deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate AND NormalizedTimestamp <= @DeleteToDate");
+    //                        deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+    //                        deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+    //                    }
+    //                    else if (fromDate.HasValue)
+    //                    {
+    //                        deleteSql.Append(" AND NormalizedTimestamp >= @DeleteFromDate");
+    //                        deleteParameters.Add(new SqlParameter("@DeleteFromDate", fromDate.Value));
+    //                    }
+    //                    else if (toDate.HasValue)
+    //                    {
+    //                        deleteSql.Append(" AND NormalizedTimestamp <= @DeleteToDate");
+    //                        deleteParameters.Add(new SqlParameter("@DeleteToDate", toDate.Value));
+    //                    }
+    //                }
+
+    //                using (var deleteCommand = new SqlCommand(deleteSql.ToString(), sqlConnection))
+    //                {
+    //                    deleteCommand.Parameters.AddRange(deleteParameters.ToArray());
+    //                    deleteCommand.ExecuteNonQuery();
+    //                }
+    //            }
+
+    //            // Execute the insert query
+    //            using (var sqlCommand = new SqlCommand(sql.ToString(), sqlConnection))
+    //            {
+    //                sqlCommand.Parameters.AddRange(parameters.ToArray());
+    //                sqlCommand.CommandTimeout = 300; // 5 minutes timeout for large aggregations
+    //                var rowsAffected = sqlCommand.ExecuteNonQuery();
+    //                Console.WriteLine($"Inserted {rowsAffected} monthly aggregated records into HealthMetricsMonth.");
+    //            }
+    //        }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Error inserting HealthMetricsMonth data: {ex.Message}");
+    //        throw;
+    //    }
+    //}
